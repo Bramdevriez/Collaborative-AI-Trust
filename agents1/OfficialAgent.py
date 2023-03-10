@@ -97,10 +97,9 @@ class BaselineAgent(ArtificialBrain):
         trustBeliefs = self._loadBelief(self._teamMembers, self._folder)
         self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages)
 
-        # competence = trustBeliefs[self._humanName]['competence'];
-        # willingness = trustBeliefs[self._humanName]['willingness'];
-        competence = 0.5
-        willingness = 0.5
+        competence = trustBeliefs[self._humanName]['competence'];
+        willingness = trustBeliefs[self._humanName]['willingness'];
+
         # self._sendMessage(competence,'RescueBot')
         # Check whether human is close in distance
         if state[{'is_human_agent': True}]:
