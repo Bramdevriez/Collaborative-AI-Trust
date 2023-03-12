@@ -320,10 +320,16 @@ class BaselineAgent(ArtificialBrain):
                         objects.append(info)
                         # Communicate which obstacle is blocking the entrance
                         if self._answered == False and not self._remove and not self._waiting:
+                            #reset the timer
+                            self._tick=state['World']['nr_ticks']
+
                             self._sendMessage('Found rock blocking ' + str(self._door['room_name']) + '. Please decide whether to "Remove" or "Continue" searching. \n \n \
                                 Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + ' \n explore - areas searched: area ' + str(self._searchedRooms).replace('area ','') + ' \
-                                \n clock - removal time: 5 seconds \n afstand - distance between us: ' + self._distanceHuman ,'RescueBot')
+                                \n clock - removal time: 5 seconds \n afstand - distance between us: ' + self._distanceHuman +'\n start timer at '+str(self._tick)+'\n current willingness is '+str(willingness)+'current competence is '+str(competence),'RescueBot')
                             self._waiting = True
+
+
+
                         # Determine the next area to explore if the human tells the agent not to remove the obstacle
                         if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
                             self._answered = True
@@ -337,14 +343,32 @@ class BaselineAgent(ArtificialBrain):
                                 self._answered = True
                             # Tell the human to come over and be idle untill human arrives
                             if not state[{'is_human_agent': True}]:
-                                self._sendMessage('Please come to ' + str(self._door['room_name']) + ' to remove rock.','RescueBot')
+                                #reset the timer
+                                self._tick=state['World']['nr_ticks']
+
+                                self._sendMessage('Please come to ' + str(self._door['room_name']) + ' to remove rock.'+'\n start timer at '+str(self._tick),'RescueBot')
                                 return None, {}
                             # Tell the human to remove the obstacle when he/she arrives
                             if state[{'is_human_agent': True}]:
-                                self._sendMessage('Lets remove rock blocking ' + str(self._door['room_name']) + '!','RescueBot')
+                                #reset the timer
+                                self._tick=state['World']['nr_ticks']
+
+                                self._sendMessage('Lets remove rock blocking ' + str(self._door['room_name']) + '!' +'\n start timer at '+str(self._tick),'RescueBot')
                                 return None, {}
                         # Remain idle untill the human communicates what to do with the identified obstacle
                         else:
+
+                            # start timer, will not stop if set action
+                            # current tick from start of game
+                            current_time = state['World']['nr_ticks']
+
+                            if current_time == self._tick+100:
+                                self._sendMessage('There is already 10 seconds more,please response,start time at:'+str( self._tick)+'current tick at:'+str(current_time),'RescueBot')
+                            if current_time == self._tick+200:
+                                self._sendMessage('after competence'+str(competence),'RescueBot')
+                            if current_time == self._tick+300:
+                                self._sendMessage('There is already 30 seconds more,please response,start time at:'+str( self._tick)+'current tick at:'+str(current_time),'RescueBot')
+
                             return None, {}
 
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'tree' in info['obj_id']:
