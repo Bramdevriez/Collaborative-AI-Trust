@@ -70,6 +70,8 @@ class BaselineAgent(ArtificialBrain):
         self._recentVic = None
         self._receivedMessages = []
         self._moving = False
+        self._c_change =0
+        self._w_change =0
 
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
@@ -95,10 +97,12 @@ class BaselineAgent(ArtificialBrain):
         self._processMessages(state, self._teamMembers, self._condition)
         # Initialize and update trust beliefs for team members
         trustBeliefs = self._loadBelief(self._teamMembers, self._folder)
-        self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages, None, None)
 
+        self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages, self._w_change, self._c_change)
         competence = trustBeliefs[self._humanName]['competence']
         willingness = trustBeliefs[self._humanName]['willingness']
+
+
         # self._sendMessage(competence,'RescueBot')
         # Check whether human is close in distance
         if state[{'is_human_agent': True}]:
@@ -363,21 +367,21 @@ class BaselineAgent(ArtificialBrain):
                             current_time = state['World']['nr_ticks']
 
                             if current_time == self._tick+100:
-                                # trustBeliefs = self._loadBelief(self._teamMembers, self._folder)
-                                self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages, -0.1, None)
-                                # competence = trustBeliefs[self._humanName]['competence']
-                                willingness = trustBeliefs[self._humanName]['willingness']
+
+                                self._w_change += -0.1
                                 self._sendMessage('There is already 10 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
                                 +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
 
                             if current_time == self._tick+200:
-                                # self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages, -0.2, None)
-                                self._sendMessage('current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
-                            if current_time == self._tick+300:
-                                self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages, -0.3, None)
-                                willingness = trustBeliefs[self._humanName]['willingness']
-                                self._sendMessage('There is already 30 seconds, please response/react! \n start time at:'+str( self._tick)+' current tick at: '+str(current_time)+ '\n current willingness is '+ str(willingness)+' current competence is '+str(competence),'RescueBot')
+                                self._w_change += -0.2
+                                self._sendMessage('There is already 20 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
+                                                  +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
 
+                            if current_time == self._tick+300:
+
+                                self._w_change += -0.3
+                                self._sendMessage('There is already 30 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
+                                                  +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
                             return None, {}
 
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'tree' in info['obj_id']:
@@ -872,14 +876,14 @@ class BaselineAgent(ArtificialBrain):
                 # Restrict the competence belief to a range of -1 to 1
                 trustBeliefs[self._humanName]['competence'] = np.clip(trustBeliefs[self._humanName]['competence'], -1, 1)
 
-        if w_change is not None:
+        if w_change != 0:
 
             trustBeliefs[self._humanName]['willingness']+= w_change
             # Restrict the competence belief to a range of -1 to 1
             trustBeliefs[self._humanName]['willingness'] = np.clip(trustBeliefs[self._humanName]['willingness'], -1, 1)
             self._sendMessage('willingness change ' + str(trustBeliefs[self._humanName]['willingness'])  , 'RescueBot')
 
-        if c_change is not None:
+        if c_change != 0:
             self._sendMessage('competence change ', 'RescueBot')
             trustBeliefs[self._humanName]['competence']+= c_change
             # Restrict the competence belief to a range of -1 to 1
