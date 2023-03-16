@@ -73,6 +73,7 @@ class BaselineAgent(ArtificialBrain):
         self._c_change =0
         self._w_change =0
 
+
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
         self._state_tracker = StateTracker(agent_id=self.agent_id)
@@ -307,8 +308,7 @@ class BaselineAgent(ArtificialBrain):
                     if action != None:
                         # Remove obstacles blocking the path to the area
                         for info in state.values():
-                            if 'class_inheritance' in info and 'ObstacleObject' in info[
-                                'class_inheritance'] and 'stone' in info['obj_id'] and info['location'] not in [(9, 4), (9, 7), (9, 19), (21, 19)]:
+                            if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'stone' in info['obj_id'] and info['location'] not in [(9, 4), (9, 7), (9, 19), (21, 19)]:
                                 self._sendMessage('Reaching ' + str(self._door['room_name']) + ' will take a bit longer because I found stones blocking my path.', 'RescueBot')
                                 return RemoveObject.__name__, {'object_id': info['obj_id']}
                         return action, {}
@@ -342,22 +342,24 @@ class BaselineAgent(ArtificialBrain):
                             self._tosearch.append(self._door['room_name'])
                             self._phase = Phase.FIND_NEXT_GOAL
                         # Wait for the human to help removing the obstacle and remove the obstacle together
-                        if self.received_messages_content and self.received_messages_content[-1] == 'Remove' or self._remove:
+                        if (self.received_messages_content and self.received_messages_content[-1] == 'Remove' or self._remove):
                             if not self._remove:
                                 self._answered = True
                             # Tell the human to come over and be idle untill human arrives
                             if not state[{'is_human_agent': True}]:
-                                #reset the timer
+                                # reset the timer
                                 self._tick=state['World']['nr_ticks']
 
-                                self._sendMessage('Please come to ' + str(self._door['room_name']) + ' to remove rock.'+'\n start timer at '+str(self._tick),'RescueBot')
+                                self._sendMessage('Please come to ' + str(self._door['room_name']) + ' to remove rock.','RescueBot')
+
                                 return None, {}
                             # Tell the human to remove the obstacle when he/she arrives
                             if state[{'is_human_agent': True}]:
-                                #reset the timer
-                                self._tick=state['World']['nr_ticks']
 
-                                self._sendMessage('Lets remove rock blocking ' + str(self._door['room_name']) + '!' +'\n start timer at '+str(self._tick) +'\n current willingness is '+str(willingness) +' current competence is '+str(competence),'RescueBot')
+                                # reset the timer
+                                self._tick = state['World']['nr_ticks']
+
+                                self._sendMessage('Lets remove rock blocking ','RescueBot')
                                 return None, {}
                         # Remain idle untill the human communicates what to do with the identified obstacle
                         else:
@@ -367,7 +369,6 @@ class BaselineAgent(ArtificialBrain):
                             current_time = state['World']['nr_ticks']
 
                             if current_time == self._tick+100:
-
                                 self._w_change += -0.1
                                 self._sendMessage('There is already 10 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
                                 +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
@@ -378,10 +379,10 @@ class BaselineAgent(ArtificialBrain):
                                                   +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
 
                             if current_time == self._tick+300:
-
                                 self._w_change += -0.3
                                 self._sendMessage('There is already 30 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
                                                   +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+
                             return None, {}
 
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'tree' in info['obj_id']:
@@ -389,9 +390,12 @@ class BaselineAgent(ArtificialBrain):
                         if willingness >= 0:
                             # Communicate which obstacle is blocking the entrance
                             if self._answered == False and not self._remove and not self._waiting:
+
+                                #reset the timer
+                                self._tick=state['World']['nr_ticks']
                                 self._sendMessage('Found tree blocking  ' + str(self._door['room_name']) + '. Please decide whether to "Remove" or "Continue" searching. \n \n \
                                     Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + '\n explore - areas searched: area ' + str(self._searchedRooms).replace('area ','') + ' \
-                                    \n clock - removal time: 10 seconds','RescueBot')
+                                    \n clock - removal time: 10 seconds' +'\n start timer at '+str(self._tick)+'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
                                 self._waiting = True
                             # Determine the next area to explore if the human tells the agent not to remove the obstacle
                             if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
@@ -413,6 +417,25 @@ class BaselineAgent(ArtificialBrain):
                                 return RemoveObject.__name__, {'object_id': info['obj_id']}
                             # Remain idle untill the human communicates what to do with the identified obstacle
                             else:
+                                # start timer, will not stop if set action
+                                # current tick from start of game
+                                current_time = state['World']['nr_ticks']
+
+                                if current_time == self._tick+100:
+                                    self._w_change += -0.1
+                                    self._sendMessage('There is already 10 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
+                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+
+                                if current_time == self._tick+200:
+                                    self._w_change += -0.2
+                                    self._sendMessage('There is already 20 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
+                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+
+                                if current_time == self._tick+300:
+                                    self._w_change += -0.3
+                                    self._sendMessage('There is already 30 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
+                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+
                                 return None, {}
                         else:
                             self._answered = True
@@ -424,14 +447,21 @@ class BaselineAgent(ArtificialBrain):
 
                     if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'stone' in info['obj_id']:
                         objects.append(info)
-                        # Communicate which obstacle is blocking the entrance
-                        if self._answered == False and not self._remove and not self._waiting:
-                            self._sendMessage('Found stones blocking  ' + str(self._door['room_name']) + '. Please decide whether to "Remove together", "Remove alone", or "Continue" searching. \n \n \
-                                Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + ' \n explore - areas searched: area ' + str(self._searchedRooms).replace('area','') + ' \
-                                \n clock - removal time together: 3 seconds \n afstand - distance between us: ' + self._distanceHuman + '\n clock - removal time alone: 20 seconds','RescueBot')
-                            self._waiting = True
 
                         if willingness*0.5+competence*0.5 >= 0:
+
+                            # Communicate which obstacle is blocking the entrance
+                            if self._answered == False and not self._remove and not self._waiting:
+
+                                # current tick from start of game
+                                self._tick = state['World']['nr_ticks']
+
+                                self._sendMessage('Found stones blocking  ' + str(self._door['room_name']) + '. Please decide whether to "Remove together", "Remove alone", or "Continue" searching. \n \n \
+                                    Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + ' \n explore - areas searched: area ' + str(self._searchedRooms).replace('area','') + ' \
+                                    \n clock - removal time together: 3 seconds \n afstand - distance between us: ' + self._distanceHuman + '\n clock - removal time alone: 20 seconds'
+                                                  +'\n start timer at '+str(self._tick)+'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                                self._waiting = True
+
                             # Determine the next area to explore if the human tells the agent not to remove the obstacle
                             if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
                                 self._answered = True
@@ -461,6 +491,26 @@ class BaselineAgent(ArtificialBrain):
                                     return None, {}
                             # Remain idle until the human communicates what to do with the identified obstacle
                             else:
+
+                                # start timer, will not stop if set action
+                                # current tick from start of game
+                                current_time = state['World']['nr_ticks']
+
+                                if current_time == self._tick+100:
+                                    self._w_change += -0.1
+                                    self._sendMessage('There is already 10 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
+                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+
+                                if current_time == self._tick+200:
+                                    self._w_change += -0.2
+                                    self._sendMessage('There is already 20 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
+                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+
+                                if current_time == self._tick+300:
+                                    self._w_change += -0.3
+                                    self._sendMessage('There is already 30 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
+                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+
                                 return None, {}
                         else:
                             self._answered = True
@@ -469,6 +519,7 @@ class BaselineAgent(ArtificialBrain):
                             self._phase = Phase.ENTER_ROOM
                             self._remove = False
                             return RemoveObject.__name__, {'object_id': info['obj_id']}
+
                 # If no obstacles are blocking the entrance, enter the area
                 if len(objects) == 0:
                     self._answered = False
@@ -841,7 +892,7 @@ class BaselineAgent(ArtificialBrain):
         # Create a dictionary with trust values for all team members
         trustBeliefs = {}
         # Set a default starting trust value
-        default = -0.1
+        default = 0.5
         trustfile_header = []
         trustfile_contents = []
         # Check if agent already collaborated with this human before, if yes: load the corresponding trust values, if no: initialize using default trust values
