@@ -75,6 +75,8 @@ class BaselineAgent(ArtificialBrain):
         self._c_change = 0
         self._w_change = 0
         self._tick = -np.inf
+        self.victim_type = None
+
 
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
@@ -710,23 +712,24 @@ class BaselineAgent(ArtificialBrain):
                                 self._foundVictimLocs[vic] = {'location': info['location'],'room': self._door['room_name'], 'obj_id': info['obj_id']}
                                 # Communicate which victim the agent found and ask the human whether to rescue the victim now or at a later stage
                                 if 'mild' in vic and self._answered == False and not self._waiting:
-                                    if willingness * 0.5 + competence * 0.5 >= 0:
+                                    # if willingness * 0.5 + competence * 0.5 >= 0:
                                         # current tick from start of game
-                                        self._tick = state['World']['nr_ticks']
+                                    self._tick = state['World']['nr_ticks']
 
-                                        self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'] + '. Please decide whether to "Rescue together", "Rescue alone", or "Continue" searching. \n \n \
-                                            Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + '\n explore - areas searched: area ' + str(self._searchedRooms).replace('area ','') + '\n \
-                                            clock - extra time when rescuing alone: 15 seconds \n afstand - distance between us: ' + self._distanceHuman
-                                                          +'\n start timer at '+str(self._tick)+'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
-                                        self._waiting = True
+                                    self._sendMessage('Found ' + vic + ' in ' + self._door['room_name'] + '. Please decide whether to "Rescue together", "Rescue alone", or "Continue" searching. \n \n \
+                                        Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + '\n explore - areas searched: area ' + str(self._searchedRooms).replace('area ','') + '\n \
+                                        clock - extra time when rescuing alone: 15 seconds \n afstand - distance between us: ' + self._distanceHuman
+                                                      +'\n start timer at '+str(self._tick)+'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                                    self._waiting = True
+                                    self.victim_type = 'mild'
 
-                                    else:
-                                        self._sendMessage('Picking up ' + self._recentVic + ' in ' + self._door['room_name'] + '.','RescueBot')
-                                        self._rescue = 'alone'
-                                        self._answered = True
-                                        self._waiting = False
-                                        self._recentVic = None
-                                        self._phase = Phase.FIND_NEXT_GOAL
+                                    # else:
+                                    #     self._sendMessage('Picking up ' + self._recentVic + ' in ' + self._door['room_name'] + '.','RescueBot')
+                                    #     self._rescue = 'alone'
+                                    #     self._answered = True
+                                    #     self._waiting = False
+                                    #     self._recentVic = None
+                                    #     self._phase = Phase.FIND_NEXT_GOAL
 
                                 if 'critical' in vic and self._answered == False and not self._waiting:
                                     # current tick from start of game
@@ -737,6 +740,8 @@ class BaselineAgent(ArtificialBrain):
                                         afstand - distance between us: ' + self._distanceHuman
                                                       +'\n start timer at '+str(self._tick)+'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
                                     self._waiting = True
+                                    self.victim_type = 'critical'
+                                    print(self._recentVic)
                     # Execute move actions to explore the area
                     return action, {}
 
@@ -833,7 +838,7 @@ class BaselineAgent(ArtificialBrain):
                     self._recentVic = None
                     self._phase = Phase.FIND_NEXT_GOAL
                 # Continue searching other areas if the human decides so
-                if self.received_messages_content and self.received_messages_content[-1] == 'Continue':
+                if (self.received_messages_content and self.received_messages_content[-1] == 'Continue'):
                     current_time = state['World']['nr_ticks']
                     # If the human responses after 20 ticks, increase W with 0.1
                     if current_time < self._tick + 200:
@@ -851,6 +856,7 @@ class BaselineAgent(ArtificialBrain):
                     self._todo.append(self._recentVic)
                     self._recentVic = None
                     self._phase = Phase.FIND_NEXT_GOAL
+
                 # Remain idle untill the human communicates to the agent what to do with the found victim
                 if self.received_messages_content and self._waiting and self.received_messages_content[-1] != 'Rescue' and self.received_messages_content[-1] != 'Continue':
 
@@ -861,13 +867,40 @@ class BaselineAgent(ArtificialBrain):
                     if not self._answered:
                         if current_time == self._tick + 200:
                             self._w_change += -0.1
-                            self._sendMessage(
-                                'There is already 20 seconds,please response/react! \n start time at: ' + str(
-                                    self._tick) + ' current tick at: ' + str(current_time)
-                                + '\n current willingness is ' + str(
-                                    willingness - 0.1) + ' current competence is ' + str(competence),
-                                'RescueBot')
-                            self._tick = -np.inf
+
+                            if (willingness * 0.5 + competence * 0.5 >= 0 and self.victim_type == 'mild') or \
+                                    ( willingness >= 0 and self.victim_type == 'critical'):
+                                self._sendMessage(
+                                    'Positive response: There is already 20 seconds,please response/react! \n start time at: ' + str(
+                                        self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
+                                        willingness - 0.1) + ' current competence is ' + str(competence),
+                                    'RescueBot')
+                                self._tick = -np.inf
+                            else:
+
+                                self._answered = True
+                                self._waiting = False
+                                self._phase = Phase.FIND_NEXT_GOAL
+
+                                if self.victim_type == 'mild':
+                                    self._sendMessage(
+                                        'Negative response: There is already 20 seconds, i will pick up the victim! \n start time at: ' + str(
+                                            self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
+                                            willingness - 0.1) + ' current competence is ' + str(competence),
+                                        'RescueBot')
+
+                                    self._sendMessage('Picking up ' + self._recentVic + ' in ' + self._door['room_name'] + '.','RescueBot')
+                                    self._rescue = 'alone'
+
+                                if self.victim_type == 'critical':
+                                    self._sendMessage(
+                                        'Negative response: There is already 20 seconds, i will perform the next task! \n start time at: ' + str(
+                                            self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
+                                            willingness - 0.1) + ' current competence is ' + str(competence),
+                                        'RescueBot')
+
+                                    self._todo.append(self._recentVic)
+                                self._recentVic = None
 
                     if self._answered:
                         # If the human responses after 20 ticks, increase W with 0.1
