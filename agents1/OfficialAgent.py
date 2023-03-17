@@ -520,118 +520,126 @@ class BaselineAgent(ArtificialBrain):
                             info['obj_id']:
                         objects.append(info)
 
-                        if willingness * 0.5 + competence * 0.5 >= 0:
+                        # Communicate which obstacle is blocking the entrance
+                        if self._answered == False and not self._remove and not self._waiting:
+                            # current tick from start of game
+                            self._tick = state['World']['nr_ticks']
 
-                            # Communicate which obstacle is blocking the entrance
-                            if self._answered == False and not self._remove and not self._waiting:
-                                # current tick from start of game
-                                self._tick = state['World']['nr_ticks']
+                            self._sendMessage('Found stones blocking  ' + str(self._door['room_name']) + '. Please decide whether to "Remove together", "Remove alone", or "Continue" searching. \n \n \
+                                Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + ' \n explore - areas searched: area ' + str(self._searchedRooms).replace('area','') + ' \
+                                \n clock - removal time together: 3 seconds \n afstand - distance between us: ' + self._distanceHuman + '\n clock - removal time alone: 20 seconds'
+                                              +'\n start timer at '+str(self._tick)+'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                            self._waiting = True
 
-                                self._sendMessage('Found stones blocking  ' + str(self._door['room_name']) + '. Please decide whether to "Remove together", "Remove alone", or "Continue" searching. \n \n \
-                                    Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + ' \n explore - areas searched: area ' + str(self._searchedRooms).replace('area','') + ' \
-                                    \n clock - removal time together: 3 seconds \n afstand - distance between us: ' + self._distanceHuman + '\n clock - removal time alone: 20 seconds'
-                                                  +'\n start timer at '+str(self._tick)+'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
-                                self._waiting = True
+                        # Determine the next area to explore if the human tells the agent not to remove the obstacle
+                        if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
+                            self._answered = True
+                            self._waiting = False
+                            # Add area to the to do list
+                            self._tosearch.append(self._door['room_name'])
+                            self._phase = Phase.FIND_NEXT_GOAL
+                        # Remove the obstacle alone if the human decides so
+                        if self.received_messages_content and self.received_messages_content[-1] == 'Remove alone' and not self._remove:
+                            self._answered = True
+                            self._waiting = False
+                            self._sendMessage('Removing stones blocking ' + str(self._door['room_name']) + '.',
+                                              'RescueBot')
+                            self._phase = Phase.ENTER_ROOM
+                            self._remove = False
 
-                            # Determine the next area to explore if the human tells the agent not to remove the obstacle
-                            if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
+                            # current tick from start of game
+                            current_time = state['World']['nr_ticks']
+                            # If the human responses after 20 ticks, increase W with 0.1
+                            if current_time < self._tick + 200:
+                                self._w_change += 0.1
+                                self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
+                                    self._tick) + ' current tick at: ' + str(current_time)
+                                                  + '\n current willingness is ' + str(
+                                    willingness + 0.1) + ' current competence is ' + str(competence), 'RescueBot')
+                                self._tick = -np.inf
+
+                            return RemoveObject.__name__, {'object_id': info['obj_id']}
+                        # Remove the obstacle together if the human decides so
+                        if self.received_messages_content and self.received_messages_content[-1] == 'Remove together' or self._remove:
+
+                            if not self._remove:
                                 self._answered = True
-                                self._waiting = False
-                                # Add area to the to do list
-                                self._tosearch.append(self._door['room_name'])
-                                self._phase = Phase.FIND_NEXT_GOAL
-                            # Remove the obstacle alone if the human decides so
-                            if self.received_messages_content and self.received_messages_content[-1] == 'Remove alone' and not self._remove:
-                                self._answered = True
-                                self._waiting = False
-                                self._sendMessage('Removing stones blocking ' + str(self._door['room_name']) + '.',
-                                                  'RescueBot')
-                                self._phase = Phase.ENTER_ROOM
-                                self._remove = False
 
-                                # current tick from start of game
                                 current_time = state['World']['nr_ticks']
                                 # If the human responses after 20 ticks, increase W with 0.1
                                 if current_time < self._tick + 200:
                                     self._w_change += 0.1
-                                    self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
-                                        self._tick) + ' current tick at: ' + str(current_time)
-                                                      + '\n current willingness is ' + str(
-                                        willingness + 0.1) + ' current competence is ' + str(competence), 'RescueBot')
+                                    self._sendMessage(
+                                        'There is within 20 seconds,good job! \n start time at: ' + str(
+                                            self._tick) + ' current tick at: ' + str(current_time)
+                                        + '\n current willingness is ' + str(
+                                            willingness + 0.1) + ' current competence is ' + str(competence),
+                                        'RescueBot')
                                     self._tick = -np.inf
 
-                                return RemoveObject.__name__, {'object_id': info['obj_id']}
-                            # Remove the obstacle together if the human decides so
-                            if self.received_messages_content and self.received_messages_content[-1] == 'Remove together' or self._remove:
+                            # Tell the human to come over and be idle untill human arrives
+                            if not state[{'is_human_agent': True}]:
+                                self._sendMessage('Please come to ' + str(
+                                    self._door['room_name']) + ' to remove stones together.', 'RescueBot')
+                                return None, {}
 
-                                if not self._remove:
-                                    self._answered = True
+                            # Tell the human to remove the obstacle when he/she arrives
+                            if state[{'is_human_agent': True}]:
+                                self._sendMessage(
+                                    'Lets remove stones blocking ' + str(self._door['room_name']) + '!',
+                                    'RescueBot')
+                                return None, {}
 
-                                    current_time = state['World']['nr_ticks']
-                                    # If the human responses after 20 ticks, increase W with 0.1
-                                    if current_time < self._tick + 200:
-                                        self._w_change += 0.1
+
+                        # Remain idle until the human communicates what to do with the identified obstacle
+                        else:
+
+                            # If the human did not responses after 20 ticks, decrease W with 0.1.
+                            # start timer, will not stop if set action
+                            # current tick from start of game
+                            current_time = state['World']['nr_ticks']
+
+                            if not self._answered:
+                                if current_time == self._tick + 200:
+                                    self._w_change += -0.1
+                                    if willingness * 0.5 + competence * 0.5 >= 0:
                                         self._sendMessage(
-                                            'There is within 20 seconds,good job! \n start time at: ' + str(
-                                                self._tick) + ' current tick at: ' + str(current_time)
-                                            + '\n current willingness is ' + str(
-                                                willingness + 0.1) + ' current competence is ' + str(competence),
-                                            'RescueBot')
-                                        self._tick = -np.inf
-
-                                # Tell the human to come over and be idle untill human arrives
-                                if not state[{'is_human_agent': True}]:
-                                    self._sendMessage('Please come to ' + str(
-                                        self._door['room_name']) + ' to remove stones together.', 'RescueBot')
-                                    return None, {}
-
-                                # Tell the human to remove the obstacle when he/she arrives
-                                if state[{'is_human_agent': True}]:
-                                    self._sendMessage(
-                                        'Lets remove stones blocking ' + str(self._door['room_name']) + '!',
-                                        'RescueBot')
-                                    return None, {}
-
-
-                            # Remain idle until the human communicates what to do with the identified obstacle
-                            else:
-
-                                # If the human did not responses after 20 ticks, decrease W with 0.1.
-                                # start timer, will not stop if set action
-                                # current tick from start of game
-                                current_time = state['World']['nr_ticks']
-
-                                if not self._answered:
-                                    if current_time == self._tick + 200:
-                                        self._w_change += -0.1
-                                        self._sendMessage(
-                                            'There is already 20 seconds,please response/react! \n start time at: ' + str(
-                                                self._tick) + ' current tick at: ' + str(current_time)
-                                            + '\n current willingness is ' + str(
+                                            'Positive response: There is already 20 seconds,please response/react! \n start time at: ' + str(
+                                                self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
                                                 willingness - 0.1) + ' current competence is ' + str(competence),
                                             'RescueBot')
                                         self._tick = -np.inf
-
-                                if self._answered:
-                                    # If the human responses after 20 ticks, increase W with 0.1
-                                    if current_time < self._tick + 200:
-                                        self._w_change += 0.1
+                                    else:
                                         self._sendMessage(
-                                            'There is within 20 seconds,good job! \n start time at: ' + str(
-                                                self._tick) + ' current tick at: ' + str(current_time)
-                                            + '\n current willingness is ' + str(
-                                                willingness + 0.1) + ' current competence is ' + str(competence),
+                                            'Negative response: There is already 20 seconds, i will remove the stone! \n start time at: ' + str(
+                                                self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
+                                                willingness - 0.1) + ' current competence is ' + str(competence),
                                             'RescueBot')
-                                        self._tick = -np.inf
 
-                                return None, {}
-                        else:
-                            self._answered = True
-                            self._waiting = False
-                            self._sendMessage('Removing stones blocking ' + str(self._door['room_name']) + '.','RescueBot')
-                            self._phase = Phase.ENTER_ROOM
-                            self._remove = False
-                            return RemoveObject.__name__, {'object_id': info['obj_id']}
+                                        self._answered = True
+                                        self._waiting = False
+                                        self._sendMessage('Removing stones blocking ' + str(self._door['room_name']) + '.','RescueBot')
+                                        self._phase = Phase.ENTER_ROOM
+                                        self._remove = False
+                                        self._tick = -np.inf
+                                        return RemoveObject.__name__, {'object_id': info['obj_id']}
+
+
+
+                            if self._answered:
+                                # If the human responses after 20 ticks, increase W with 0.1
+                                if current_time < self._tick + 200:
+                                    self._w_change += 0.1
+                                    self._sendMessage(
+                                        'There is within 20 seconds,good job! \n start time at: ' + str(
+                                            self._tick) + ' current tick at: ' + str(current_time)
+                                        + '\n current willingness is ' + str(
+                                            willingness + 0.1) + ' current competence is ' + str(competence),
+                                        'RescueBot')
+                                    self._tick = -np.inf
+
+                            return None, {}
+
 
                 # If no obstacles are blocking the entrance, enter the area
                 if len(objects) == 0:
