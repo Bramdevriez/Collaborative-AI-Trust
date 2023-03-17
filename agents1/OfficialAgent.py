@@ -709,7 +709,7 @@ class BaselineAgent(ArtificialBrain):
                         self._sendMessage('There is already 30 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
                                           +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
 
-                return None, {}
+                    return None, {}
                 # Find the next area to search when the agent is not waiting for an answer from the human or occupied with rescuing a victim
                 if not self._waiting and not self._rescue:
                     self._recentVic = None
