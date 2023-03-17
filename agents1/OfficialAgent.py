@@ -375,15 +375,46 @@ class BaselineAgent(ArtificialBrain):
                             current_time = state['World']['nr_ticks']
 
                             if not self._answered:
+
                                 if current_time == self._tick + 200:
                                     self._w_change += -0.1
-                                    self._sendMessage(
-                                        'There is already 20 seconds,please response/react! \n start time at: ' + str(
-                                            self._tick) + ' current tick at: ' + str(current_time)
-                                        + '\n current willingness is ' + str(
-                                            willingness - 0.1) + ' current competence is ' + str(competence),
-                                        'RescueBot')
+
+                                    if willingness >= 0:
+                                        self._sendMessage(
+                                            'Positive response: There is already 20 seconds,please response/react! \n start time at: ' + str(
+                                                self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
+                                                willingness - 0.1) + ' current competence is ' + str(competence),
+                                            'RescueBot')
+                                        self._tick = -np.inf
+                                    else:
+                                        self._sendMessage(
+                                            'Negative response: There is already 20 seconds, i will perform the next task! \n start time at: ' + str(
+                                                self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
+                                                willingness - 0.1) + ' current competence is ' + str(competence),
+                                            'RescueBot')
+
+                                        self._answered = True
+                                        self._waiting = False
+                                        # Add area to the to do list
+                                        self._tosearch.append(self._door['room_name'])
+                                        self._phase = Phase.FIND_NEXT_GOAL
+
                                     self._tick = -np.inf
+
+                                # if current_time == self._tick + 500:
+                                #     self._sendMessage(
+                                #         'There is already 5 second, i will perform the next task! \n start time at: ' + str(
+                                #             self._tick) + ' current tick at: ' + str(current_time)
+                                #         + '\n current willingness is ' + str(
+                                #             willingness - 0.1) + ' current competence is ' + str(competence),
+                                #         'RescueBot')
+                                #     self._answered = True
+                                #     self._waiting = False
+                                #     # Add area to the to do list
+                                #     self._tosearch.append(self._door['room_name'])
+                                #     self._phase = Phase.FIND_NEXT_GOAL
+                                #     self._tick = -np.inf
+
 
                             if self._answered:
                                 # If the human responses after 20 ticks, increase W with 0.1
@@ -1063,7 +1094,7 @@ class BaselineAgent(ArtificialBrain):
         # Create a dictionary with trust values for all team members
         trustBeliefs = {}
         # Set a default starting trust value
-        default = 1
+        default = -1
         trustfile_header = []
         trustfile_contents = []
         # Check if agent already collaborated with this human before, if yes: load the corresponding trust values, if no: initialize using default trust values
