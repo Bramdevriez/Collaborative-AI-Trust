@@ -15,6 +15,7 @@ from matrx.messages.message import Message
 from matrx.messages.message_manager import MessageManager
 from actions1.CustomActions import RemoveObjectTogether, CarryObjectTogether, DropObjectTogether, CarryObject, Drop
 
+
 class Phase(enum.Enum):
     INTRO = 1,
     FIND_NEXT_GOAL = 2,
@@ -35,6 +36,7 @@ class Phase(enum.Enum):
     FIX_ORDER_DROP = 17,
     REMOVE_OBSTACLE_IF_NEEDED = 18,
     ENTER_ROOM = 19
+
 
 class BaselineAgent(ArtificialBrain):
     def __init__(self, slowdown, condition, name, folder):
@@ -70,9 +72,9 @@ class BaselineAgent(ArtificialBrain):
         self._recentVic = None
         self._receivedMessages = []
         self._moving = False
-        self._c_change =0
-        self._w_change =0
-
+        self._c_change = 0
+        self._w_change = 0
+        self._tick = -np.inf
 
     def initialize(self):
         # Initialization of the state tracker and navigation algorithm
@@ -102,7 +104,6 @@ class BaselineAgent(ArtificialBrain):
         self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages, self._w_change, self._c_change)
         competence = trustBeliefs[self._humanName]['competence']
         willingness = trustBeliefs[self._humanName]['willingness']
-
 
         # self._sendMessage(competence,'RescueBot')
         # Check whether human is close in distance
@@ -185,7 +186,7 @@ class BaselineAgent(ArtificialBrain):
                 # Check which victims can be rescued next because human or agent already found them
                 for vic in remainingVics:
                     # Define a previously found victim as target victim because all areas have been searched
-                    if vic in self._foundVictims and vic in self._todo and len(self._searchedRooms)==0:
+                    if vic in self._foundVictims and vic in self._todo and len(self._searchedRooms) == 0:
                         self._goalVic = vic
                         self._goalLoc = remaining[vic]
                         # Move to target victim
@@ -204,12 +205,11 @@ class BaselineAgent(ArtificialBrain):
                         self._goalVic = vic
                         self._goalLoc = remaining[vic]
 
-
                         # Rescue together when victim is critical or when the human is weak and the victim is mildly injured
-                        if 'critical' in vic or 'mild' in vic and self._condition=='weak':
+                        if 'critical' in vic or 'mild' in vic and self._condition == 'weak':
                             self._rescue = 'together'
                         # Rescue alone if the victim is mildly injured and the human not weak
-                        if 'mild' in vic and self._condition!='weak':
+                        if 'mild' in vic and self._condition != 'weak':
                             self._rescue = 'alone'
                         # Plan path to victim because the exact location is known (i.e., the agent found this victim)
                         if 'location' in self._foundVictimLocs[vic].keys():
@@ -324,15 +324,13 @@ class BaselineAgent(ArtificialBrain):
                         objects.append(info)
                         # Communicate which obstacle is blocking the entrance
                         if self._answered == False and not self._remove and not self._waiting:
-                            #reset the timer
-                            self._tick=state['World']['nr_ticks']
+                            # reset the timer
+                            self._tick = state['World']['nr_ticks']
 
                             self._sendMessage('Found rock blocking ' + str(self._door['room_name']) + '. Please decide whether to "Remove" or "Continue" searching. \n \n \
                                 Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + ' \n explore - areas searched: area ' + str(self._searchedRooms).replace('area ','') + ' \
                                 \n clock - removal time: 5 seconds \n afstand - distance between us: ' + self._distanceHuman +'\n start timer at '+str(self._tick)+'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
                             self._waiting = True
-
-
 
                         # Determine the next area to explore if the human tells the agent not to remove the obstacle
                         if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
@@ -343,62 +341,77 @@ class BaselineAgent(ArtificialBrain):
                             self._phase = Phase.FIND_NEXT_GOAL
                         # Wait for the human to help removing the obstacle and remove the obstacle together
                         if (self.received_messages_content and self.received_messages_content[-1] == 'Remove' or self._remove):
+
                             if not self._remove:
                                 self._answered = True
+                                # current tick from start of game
+                                current_time = state['World']['nr_ticks']
+                                # If the human responses after 20 ticks, increase W with 0.1
+                                if current_time < self._tick + 200:
+                                    self._w_change += 0.1
+                                    self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
+                                        self._tick) + ' current tick at: ' + str(current_time)
+                                                      + '\n current willingness is ' + str(
+                                        willingness + 0.1) + ' current competence is ' + str(competence), 'RescueBot')
+                                    self._tick = -np.inf
+
                             # Tell the human to come over and be idle untill human arrives
+                            # test where the human is
                             if not state[{'is_human_agent': True}]:
-                                # reset the timer
-                                self._tick=state['World']['nr_ticks']
-
-                                self._sendMessage('Please come to ' + str(self._door['room_name']) + ' to remove rock.','RescueBot')
-
+                                self._sendMessage('Please come to ' + str(self._door['room_name']) + ' to remove rock.',
+                                                  'RescueBot')
                                 return None, {}
                             # Tell the human to remove the obstacle when he/she arrives
+                            # because from human agent
                             if state[{'is_human_agent': True}]:
-
-                                # reset the timer
-                                self._tick = state['World']['nr_ticks']
-
-                                self._sendMessage('Lets remove rock blocking ','RescueBot')
+                                self._sendMessage('Lets remove rock blocking ', 'RescueBot')
                                 return None, {}
                         # Remain idle untill the human communicates what to do with the identified obstacle
                         else:
 
+                            # If the human did not responses after 20 ticks, decrease W with 0.1.
                             # start timer, will not stop if set action
                             # current tick from start of game
                             current_time = state['World']['nr_ticks']
 
-                            if current_time == self._tick+100:
-                                self._w_change += -0.1
-                                self._sendMessage('There is already 10 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                            if not self._answered:
+                                if current_time == self._tick + 200:
+                                    self._w_change += -0.1
+                                    self._sendMessage(
+                                        'There is already 20 seconds,please response/react! \n start time at: ' + str(
+                                            self._tick) + ' current tick at: ' + str(current_time)
+                                        + '\n current willingness is ' + str(
+                                            willingness - 0.1) + ' current competence is ' + str(competence),
+                                        'RescueBot')
+                                    self._tick = -np.inf
 
-                            if current_time == self._tick+200:
-                                self._w_change += -0.2
-                                self._sendMessage('There is already 20 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                                  +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
-
-                            if current_time == self._tick+300:
-                                self._w_change += -0.3
-                                self._sendMessage('There is already 30 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                                  +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                            if self._answered:
+                                # If the human responses after 20 ticks, increase W with 0.1
+                                if current_time < self._tick + 200:
+                                    self._w_change += 0.1
+                                    self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
+                                        self._tick) + ' current tick at: ' + str(current_time)
+                                                      + '\n current willingness is ' + str(
+                                        willingness + 0.1) + ' current competence is ' + str(competence), 'RescueBot')
+                                    self._tick = -np.inf
 
                             return None, {}
 
-                    if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'tree' in info['obj_id']:
+                    if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'tree' in info[
+                        'obj_id']:
                         objects.append(info)
                         if willingness >= 0:
                             # Communicate which obstacle is blocking the entrance
                             if self._answered == False and not self._remove and not self._waiting:
-
-                                #reset the timer
-                                self._tick=state['World']['nr_ticks']
+                                # reset the timer
+                                self._tick = state['World']['nr_ticks']
                                 self._sendMessage('Found tree blocking  ' + str(self._door['room_name']) + '. Please decide whether to "Remove" or "Continue" searching. \n \n \
                                     Important features to consider are: \n safe - victims rescued: ' + str(self._collectedVictims) + '\n explore - areas searched: area ' + str(self._searchedRooms).replace('area ','') + ' \
                                     \n clock - removal time: 10 seconds' +'\n start timer at '+str(self._tick)+'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
                                 self._waiting = True
                             # Determine the next area to explore if the human tells the agent not to remove the obstacle
-                            if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
+                            if self.received_messages_content and self.received_messages_content[
+                                -1] == 'Continue' and not self._remove:
                                 self._answered = True
                                 self._waiting = False
                                 # Add area to the to do list
@@ -409,50 +422,76 @@ class BaselineAgent(ArtificialBrain):
                                 if not self._remove:
                                     self._answered = True
                                     self._waiting = False
-                                    self._sendMessage('Removing tree blocking ' + str(self._door['room_name']) + '.','RescueBot')
+
+                                    current_time = state['World']['nr_ticks']
+                                    # If the human responses after 20 ticks, increase W with 0.1
+                                    if current_time < self._tick + 200:
+                                        self._w_change += 0.1
+                                        self._sendMessage(
+                                            'There is within 20 seconds,good job! \n start time at: ' + str(
+                                                self._tick) + ' current tick at: ' + str(current_time)
+                                            + '\n current willingness is ' + str(
+                                                willingness + 0.1) + ' current competence is ' + str(competence),
+                                            'RescueBot')
+                                        self._tick = -np.inf
+
+                                    self._sendMessage('Removing tree blocking ' + str(self._door['room_name']) + '.',
+                                                      'RescueBot')
+
                                 if self._remove:
-                                    self._sendMessage('Removing tree blocking ' + str(self._door['room_name']) + ' because you asked me to.', 'RescueBot')
+                                    self._sendMessage('Removing tree blocking ' + str(
+                                        self._door['room_name']) + ' because you asked me to.', 'RescueBot')
                                 self._phase = Phase.ENTER_ROOM
                                 self._remove = False
                                 return RemoveObject.__name__, {'object_id': info['obj_id']}
                             # Remain idle untill the human communicates what to do with the identified obstacle
                             else:
+                                # If the human did not responses after 20 ticks, decrease W with 0.1.
                                 # start timer, will not stop if set action
                                 # current tick from start of game
                                 current_time = state['World']['nr_ticks']
 
-                                if current_time == self._tick+100:
-                                    self._w_change += -0.1
-                                    self._sendMessage('There is already 10 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                                if not self._answered:
+                                    if current_time == self._tick + 200:
+                                        self._w_change += -0.1
+                                        self._sendMessage(
+                                            'There is already 20 seconds,please response/react! \n start time at: ' + str(
+                                                self._tick) + ' current tick at: ' + str(current_time)
+                                            + '\n current willingness is ' + str(
+                                                willingness - 0.1) + ' current competence is ' + str(competence),
+                                            'RescueBot')
+                                        self._tick = -np.inf
 
-                                if current_time == self._tick+200:
-                                    self._w_change += -0.2
-                                    self._sendMessage('There is already 20 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
-
-                                if current_time == self._tick+300:
-                                    self._w_change += -0.3
-                                    self._sendMessage('There is already 30 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                                if self._answered:
+                                    # If the human responses after 20 ticks, increase W with 0.1
+                                    if current_time < self._tick + 200:
+                                        self._w_change += 0.1
+                                        self._sendMessage(
+                                            'There is within 20 seconds,good job! \n start time at: ' + str(
+                                                self._tick) + ' current tick at: ' + str(current_time)
+                                            + '\n current willingness is ' + str(
+                                                willingness + 0.1) + ' current competence is ' + str(competence),
+                                            'RescueBot')
+                                        self._tick = -np.inf
 
                                 return None, {}
                         else:
                             self._answered = True
                             self._waiting = False
-                            self._sendMessage('Removing tree blocking ' + str(self._door['room_name']) + '.','RescueBot')
+                            self._sendMessage('Removing tree blocking ' + str(self._door['room_name']) + '.',
+                                              'RescueBot')
                             self._phase = Phase.ENTER_ROOM
                             self._remove = False
                             return RemoveObject.__name__, {'object_id': info['obj_id']}
 
-                    if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'stone' in info['obj_id']:
+                    if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'stone' in \
+                            info['obj_id']:
                         objects.append(info)
 
-                        if willingness*0.5+competence*0.5 >= 0:
+                        if willingness * 0.5 + competence * 0.5 >= 0:
 
                             # Communicate which obstacle is blocking the entrance
                             if self._answered == False and not self._remove and not self._waiting:
-
                                 # current tick from start of game
                                 self._tick = state['World']['nr_ticks']
 
@@ -463,7 +502,8 @@ class BaselineAgent(ArtificialBrain):
                                 self._waiting = True
 
                             # Determine the next area to explore if the human tells the agent not to remove the obstacle
-                            if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
+                            if self.received_messages_content and self.received_messages_content[
+                                -1] == 'Continue' and not self._remove:
                                 self._answered = True
                                 self._waiting = False
                                 # Add area to the to do list
@@ -473,43 +513,86 @@ class BaselineAgent(ArtificialBrain):
                             if self.received_messages_content and self.received_messages_content[-1] == 'Remove alone' and not self._remove:
                                 self._answered = True
                                 self._waiting = False
-                                self._sendMessage('Removing stones blocking ' + str(self._door['room_name']) + '.','RescueBot')
+                                self._sendMessage('Removing stones blocking ' + str(self._door['room_name']) + '.',
+                                                  'RescueBot')
                                 self._phase = Phase.ENTER_ROOM
                                 self._remove = False
+
+                                # current tick from start of game
+                                current_time = state['World']['nr_ticks']
+                                # If the human responses after 20 ticks, increase W with 0.1
+                                if current_time < self._tick + 200:
+                                    self._w_change += 0.1
+                                    self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
+                                        self._tick) + ' current tick at: ' + str(current_time)
+                                                      + '\n current willingness is ' + str(
+                                        willingness + 0.1) + ' current competence is ' + str(competence), 'RescueBot')
+                                    self._tick = -np.inf
+
                                 return RemoveObject.__name__, {'object_id': info['obj_id']}
                             # Remove the obstacle together if the human decides so
-                            if self.received_messages_content and self.received_messages_content[-1] == 'Remove together' or self._remove:
+                            if self.received_messages_content and self.received_messages_content[
+                                -1] == 'Remove together' or self._remove:
+
                                 if not self._remove:
                                     self._answered = True
+
+                                    current_time = state['World']['nr_ticks']
+                                    # If the human responses after 20 ticks, increase W with 0.1
+                                    if current_time < self._tick + 200:
+                                        self._w_change += 0.1
+                                        self._sendMessage(
+                                            'There is within 20 seconds,good job! \n start time at: ' + str(
+                                                self._tick) + ' current tick at: ' + str(current_time)
+                                            + '\n current willingness is ' + str(
+                                                willingness + 0.1) + ' current competence is ' + str(competence),
+                                            'RescueBot')
+                                        self._tick = -np.inf
+
                                 # Tell the human to come over and be idle untill human arrives
                                 if not state[{'is_human_agent': True}]:
-                                    self._sendMessage('Please come to ' + str(self._door['room_name']) + ' to remove stones together.','RescueBot')
+                                    self._sendMessage('Please come to ' + str(
+                                        self._door['room_name']) + ' to remove stones together.', 'RescueBot')
                                     return None, {}
+
                                 # Tell the human to remove the obstacle when he/she arrives
                                 if state[{'is_human_agent': True}]:
-                                    self._sendMessage('Lets remove stones blocking ' + str(self._door['room_name']) + '!','RescueBot')
+                                    self._sendMessage(
+                                        'Lets remove stones blocking ' + str(self._door['room_name']) + '!',
+                                        'RescueBot')
                                     return None, {}
+
+
                             # Remain idle until the human communicates what to do with the identified obstacle
                             else:
 
+                                # If the human did not responses after 20 ticks, decrease W with 0.1.
                                 # start timer, will not stop if set action
                                 # current tick from start of game
                                 current_time = state['World']['nr_ticks']
 
-                                if current_time == self._tick+100:
-                                    self._w_change += -0.1
-                                    self._sendMessage('There is already 10 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                                if not self._answered:
+                                    if current_time == self._tick + 200:
+                                        self._w_change += -0.1
+                                        self._sendMessage(
+                                            'There is already 20 seconds,please response/react! \n start time at: ' + str(
+                                                self._tick) + ' current tick at: ' + str(current_time)
+                                            + '\n current willingness is ' + str(
+                                                willingness - 0.1) + ' current competence is ' + str(competence),
+                                            'RescueBot')
+                                        self._tick = -np.inf
 
-                                if current_time == self._tick+200:
-                                    self._w_change += -0.2
-                                    self._sendMessage('There is already 20 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
-
-                                if current_time == self._tick+300:
-                                    self._w_change += -0.3
-                                    self._sendMessage('There is already 30 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                                      +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                                if self._answered:
+                                    # If the human responses after 20 ticks, increase W with 0.1
+                                    if current_time < self._tick + 200:
+                                        self._w_change += 0.1
+                                        self._sendMessage(
+                                            'There is within 20 seconds,good job! \n start time at: ' + str(
+                                                self._tick) + ' current tick at: ' + str(current_time)
+                                            + '\n current willingness is ' + str(
+                                                willingness + 0.1) + ' current competence is ' + str(competence),
+                                            'RescueBot')
+                                        self._tick = -np.inf
 
                                 return None, {}
                         else:
@@ -599,7 +682,7 @@ class BaselineAgent(ArtificialBrain):
                                 self._foundVictimLocs[vic] = {'location': info['location'],'room': self._door['room_name'], 'obj_id': info['obj_id']}
                                 # Communicate which victim the agent found and ask the human whether to rescue the victim now or at a later stage
                                 if 'mild' in vic and self._answered == False and not self._waiting:
-                                    if willingness*0.5+competence*0.5 >= 0:
+                                    if willingness * 0.5 + competence * 0.5 >= 0:
                                         # current tick from start of game
                                         self._tick = state['World']['nr_ticks']
 
@@ -618,7 +701,6 @@ class BaselineAgent(ArtificialBrain):
                                         self._phase = Phase.FIND_NEXT_GOAL
 
                                 if 'critical' in vic and self._answered == False and not self._waiting:
-
                                     # current tick from start of game
                                     self._tick = state['World']['nr_ticks']
 
@@ -694,20 +776,26 @@ class BaselineAgent(ArtificialBrain):
                     # current tick from start of game
                     current_time = state['World']['nr_ticks']
 
-                    if current_time == self._tick+100:
+                    if current_time == self._tick + 100:
                         self._w_change += -0.1
-                        self._sendMessage('There is already 10 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                          +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                        self._sendMessage('There is already 10 seconds,please response/react! \n start time at: ' + str(
+                            self._tick) + ' current tick at: ' + str(current_time)
+                                          + '\n current willingness is ' + str(
+                            willingness) + ' current competence is ' + str(competence), 'RescueBot')
 
-                    if current_time == self._tick+200:
+                    if current_time == self._tick + 200:
                         self._w_change += -0.2
-                        self._sendMessage('There is already 20 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                          +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                        self._sendMessage('There is already 20 seconds,please response/react! \n start time at: ' + str(
+                            self._tick) + ' current tick at: ' + str(current_time)
+                                          + '\n current willingness is ' + str(
+                            willingness) + ' current competence is ' + str(competence), 'RescueBot')
 
-                    if current_time == self._tick+300:
+                    if current_time == self._tick + 300:
                         self._w_change += -0.3
-                        self._sendMessage('There is already 30 seconds,please response/react! \n start time at: '+str(self._tick)+' current tick at: '+str(current_time)
-                                          +'\n current willingness is '+str(willingness)+' current competence is '+str(competence),'RescueBot')
+                        self._sendMessage('There is already 30 seconds,please response/react! \n start time at: ' + str(
+                            self._tick) + ' current tick at: ' + str(current_time)
+                                          + '\n current willingness is ' + str(
+                            willingness) + ' current competence is ' + str(competence), 'RescueBot')
 
                     return None, {}
                 # Find the next area to search when the agent is not waiting for an answer from the human or occupied with rescuing a victim
@@ -766,7 +854,7 @@ class BaselineAgent(ArtificialBrain):
                     # Determine the next victim to rescue or search
                     self._phase = Phase.FIND_NEXT_GOAL
                 # When rescuing mildly injured victims alone, pick the victim up and plan the path to the drop zone
-                if 'mild' in self._goalVic and self._rescue=='alone':
+                if 'mild' in self._goalVic and self._rescue == 'alone':
                     self._phase = Phase.PLAN_PATH_TO_DROPPOINT
                     if self._goalVic not in self._collectedVictims:
                         self._collectedVictims.append(self._goalVic)
@@ -782,7 +870,7 @@ class BaselineAgent(ArtificialBrain):
 
             if Phase.FOLLOW_PATH_TO_DROPPOINT == self._phase:
                 # Communicate that the agent is transporting a mildly injured victim alone to the drop zone
-                if 'mild' in self._goalVic and self._rescue=='alone':
+                if 'mild' in self._goalVic and self._rescue == 'alone':
                     self._sendMessage('Transporting ' + self._goalVic + ' to the drop zone.', 'RescueBot')
                 self._state_tracker.update(state)
                 # Follow the path to the drop zone
@@ -794,7 +882,7 @@ class BaselineAgent(ArtificialBrain):
 
             if Phase.DROP_VICTIM == self._phase:
                 # Communicate that the agent delivered a mildly injured victim alone to the drop zone
-                if 'mild' in self._goalVic and self._rescue=='alone':
+                if 'mild' in self._goalVic and self._rescue == 'alone':
                     self._sendMessage('Delivered ' + self._goalVic + ' at the drop zone.', 'RescueBot')
                 # Identify the next target victim to rescue
                 self._phase = Phase.FIND_NEXT_GOAL
@@ -857,10 +945,10 @@ class BaselineAgent(ArtificialBrain):
                     if foundVic in self._foundVictims and self._foundVictimLocs[foundVic]['room'] != loc:
                         self._foundVictimLocs[foundVic] = {'room': loc}
                     # Decide to help the human carry a found victim when the human's condition is 'weak'
-                    if condition=='weak':
+                    if condition == 'weak':
                         self._rescue = 'together'
                     # Add the found victim to the to do list when the human's condition is not 'weak'
-                    if 'mild' in foundVic and condition!='weak':
+                    if 'mild' in foundVic and condition != 'weak':
                         self._todo.append(foundVic)
                 # If a received message involves team members rescuing victims, add these victims and their locations to memory
                 if msg.startswith('Collect:'):
@@ -880,10 +968,10 @@ class BaselineAgent(ArtificialBrain):
                     if collectVic in self._foundVictims and self._foundVictimLocs[collectVic]['room'] != loc:
                         self._foundVictimLocs[collectVic] = {'room': loc}
                     # Add the victim to the memory of rescued victims when the human's condition is not weak
-                    if condition!='weak' and collectVic not in self._collectedVictims:
+                    if condition != 'weak' and collectVic not in self._collectedVictims:
                         self._collectedVictims.append(collectVic)
                     # Decide to help the human carry the victim together when the human's condition is weak
-                    if condition=='weak':
+                    if condition == 'weak':
                         self._rescue = 'together'
                 # If a received message involves team members asking for help with removing obstacles, add their location to memory and come over
                 if msg.startswith('Remove:'):
@@ -922,24 +1010,24 @@ class BaselineAgent(ArtificialBrain):
         # Create a dictionary with trust values for all team members
         trustBeliefs = {}
         # Set a default starting trust value
-        default = 0.5
+        default = 1
         trustfile_header = []
         trustfile_contents = []
         # Check if agent already collaborated with this human before, if yes: load the corresponding trust values, if no: initialize using default trust values
-        with open(folder+'/beliefs/allTrustBeliefs.csv') as csvfile:
+        with open(folder + '/beliefs/allTrustBeliefs.csv') as csvfile:
             reader = csv.reader(csvfile, delimiter=';', quotechar="'")
             for row in reader:
-                if trustfile_header==[]:
-                    trustfile_header=row
+                if trustfile_header == []:
+                    trustfile_header = row
                     continue
                 # Retrieve trust values
-                if row and row[0]==self._humanName:
+                if row and row[0] == self._humanName:
                     name = row[0]
                     competence = float(row[1])
                     willingness = float(row[2])
                     trustBeliefs[name] = {'competence': competence, 'willingness': willingness}
                 # Initialize default trust values
-                if row and row[0]!=self._humanName:
+                if row and row[0] != self._humanName:
                     competence = default
                     willingness = default
                     trustBeliefs[self._humanName] = {'competence': competence, 'willingness': willingness}
@@ -953,20 +1041,20 @@ class BaselineAgent(ArtificialBrain):
         for message in receivedMessages:
             # Increase agent trust in a team member that rescued a victim
             if 'Collect' in message:
-                trustBeliefs[self._humanName]['competence']+= 0.10
+                trustBeliefs[self._humanName]['competence'] += 0.10
                 # Restrict the competence belief to a range of -1 to 1
-                trustBeliefs[self._humanName]['competence'] = np.clip(trustBeliefs[self._humanName]['competence'], -1, 1)
+                trustBeliefs[self._humanName]['competence'] = np.clip(trustBeliefs[self._humanName]['competence'], -1,
+                                                                      1)
 
         if w_change != 0:
-
-            trustBeliefs[self._humanName]['willingness']+= w_change
+            trustBeliefs[self._humanName]['willingness'] += w_change
             # Restrict the competence belief to a range of -1 to 1
             trustBeliefs[self._humanName]['willingness'] = np.clip(trustBeliefs[self._humanName]['willingness'], -1, 1)
-            self._sendMessage('willingness change ' + str(trustBeliefs[self._humanName]['willingness'])  , 'RescueBot')
+            self._sendMessage('willingness change ' + str(trustBeliefs[self._humanName]['willingness']), 'RescueBot')
 
         if c_change != 0:
             self._sendMessage('competence change ', 'RescueBot')
-            trustBeliefs[self._humanName]['competence']+= c_change
+            trustBeliefs[self._humanName]['competence'] += c_change
             # Restrict the competence belief to a range of -1 to 1
             trustBeliefs[self._humanName]['competence'] = np.clip(trustBeliefs[self._humanName]['competence'], -1, 1)
 
