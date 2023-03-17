@@ -397,8 +397,7 @@ class BaselineAgent(ArtificialBrain):
 
                             return None, {}
 
-                    if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'tree' in info[
-                        'obj_id']:
+                    if 'class_inheritance' in info and 'ObstacleObject' in info['class_inheritance'] and 'tree' in info['obj_id']:
                         objects.append(info)
                         if willingness >= 0:
                             # Communicate which obstacle is blocking the entrance
