@@ -74,10 +74,12 @@ class BaselineAgent(ArtificialBrain):
         self._moving = False
         self.competence = 0
         self.willingness = 0
-        self.confidence = 0
+        self.confidence = 1
         self._tick = -np.inf
         self.victim_type = None
         self.change = 0.5
+        self.ignoreMsg = []
+
 
 
     def initialize(self):
@@ -94,8 +96,8 @@ class BaselineAgent(ArtificialBrain):
         return competence * weight_c*0.01 + willingness * weight_w*0.01
 
     def update(self, reaction):
-        self.confidence += 1
         self.willingness += reaction * self.change / self.confidence
+        self.confidence += 0
 
 
     def decide_on_actions(self, state):
@@ -1064,13 +1066,20 @@ class BaselineAgent(ArtificialBrain):
         # Create a dictionary with a list of received messages from each team member
         for member in teamMembers:
             receivedMessages[member] = []
+
         for mssg in self.received_messages:
+
             for member in teamMembers:
                 if mssg.from_id == member:
                     receivedMessages[member].append(mssg.content)
+
+
+        indexM = 0
         # Check the content of the received messages
         for mssgs in receivedMessages.values():
+            indexS = 0
             for msg in mssgs:
+                index = (indexS , indexM)
                 # If a received message involves team members searching areas, add these areas to the memory of areas that have been explored
                 if msg.startswith("Search:"):
                     area = 'area ' + msg.split()[-1]
@@ -1078,6 +1087,7 @@ class BaselineAgent(ArtificialBrain):
                         trustworthiness = self.calculate_trustworthiness(willingness, competence, 40, 60)
                         if trustworthiness > 0:
                             self._searchedRooms.append(area)
+
                         # print("trust "+ str(trustworthiness)+ " search list ", self._searchedRooms)
                 # If a received message involves team members finding victims, add these victims and their locations to memory
                 if msg.startswith("Found:"):
@@ -1110,8 +1120,11 @@ class BaselineAgent(ArtificialBrain):
                 # If a received message involves team members rescuing victims, add these victims and their locations to memory
                 if msg.startswith('Collect:'):
 
+                    content = msg + str(index)
+                    print(content)
                     trustworthiness = self.calculate_trustworthiness(willingness, competence, 30, 470)
-                    if trustworthiness >= 0:
+
+                    if trustworthiness >= 0 and content not in self.ignoreMsg:
 
                         # Identify which victim and area it concerns
                         if len(msg.split()) == 6:
@@ -1134,6 +1147,10 @@ class BaselineAgent(ArtificialBrain):
                         # Decide to help the human carry the victim together when the human's condition is weak
                         if condition == 'weak':
                             self._rescue = 'together'
+                    elif content not in self.ignoreMsg:
+                        # add it to ignore message in the future
+                        # remove_List.append(index)
+                        self.ignoreMsg.append(content)
                     print("trust "+str(trustworthiness), self._foundVictims)
                 # If a received message involves team members asking for help with removing obstacles, add their location to memory and come over
                 if msg.startswith('Remove:'):
@@ -1161,9 +1178,17 @@ class BaselineAgent(ArtificialBrain):
                     else:
                         area = 'area ' + msg.split()[-1]
                         self._sendMessage('Will come to ' + area + ' after dropping ' + self._goalVic + '.','RescueBot')
+
+                indexS += 1
+
             # Store the current location of the human in memory
             if mssgs and mssgs[-1].split()[-1] in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14']:
                 self._humanLoc = int(mssgs[-1].split()[-1])
+
+            indexM += 1
+
+            # for i in remove_List:
+            #     del self._receivedMessages[i]
 
     def _loadBelief(self, members, folder):
         '''
