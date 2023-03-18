@@ -107,9 +107,6 @@ class BaselineAgent(ArtificialBrain):
         # Process messages from team members
         self._processMessages(state, self._teamMembers, self._condition)
 
-        # increase confidence every round
-        self.confidence+= 1
-
         # Initialize and update trust beliefs for team members
         trustBeliefs = self._loadBelief(self._teamMembers, self._folder)
 
@@ -360,7 +357,10 @@ class BaselineAgent(ArtificialBrain):
                                 current_time = state['World']['nr_ticks']
                                 # If the human responses after 20 ticks, increase W with 0.1
                                 if current_time < self._tick + 200:
+                                    # increase confidence every round
+                                    self.confidence += 1
                                     self._w_change += 0.1/self.confidence
+
                                     self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
                                         self._tick) + ' current tick at: ' + str(current_time)
                                                       + '\n current willingness is ' + str(
@@ -391,6 +391,8 @@ class BaselineAgent(ArtificialBrain):
                             if not self._answered:
 
                                 if current_time == self._tick + 200:
+                                     # increase confidence every round
+                                    self.confidence+= 1
                                     self._w_change += -0.1/self.confidence
                                     # Calculate the trustworthiness value
                                     trustworthiness = self.calculate_trustworthiness(willingness, competence, 100, 0)
@@ -421,6 +423,8 @@ class BaselineAgent(ArtificialBrain):
                             if self._answered:
                                 # If the human responses after 20 ticks, increase W with 0.1
                                 if current_time < self._tick + 200:
+                                     # increase confidence every round
+                                    self.confidence += 1
                                     self._w_change += 0.1/self.confidence
                                     self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
                                         self._tick) + ' current tick at: ' + str(current_time)
@@ -460,6 +464,8 @@ class BaselineAgent(ArtificialBrain):
                                     current_time = state['World']['nr_ticks']
                                     # If the human responses after 20 ticks, increase W with 0.1
                                     if current_time < self._tick + 200:
+                                        # increase confidence every round
+                                        self.confidence += 1
                                         self._w_change += 0.1/self.confidence
                                         self._sendMessage(
                                             'There is within 20 seconds,good job! \n start time at: ' + str(
@@ -487,6 +493,8 @@ class BaselineAgent(ArtificialBrain):
 
                                 if not self._answered:
                                     if current_time == self._tick + 200:
+                                        # increase confidence every round
+                                        self.confidence += 1
                                         self._w_change += -0.1/self.confidence
                                         self._sendMessage(
                                             'There is already 20 seconds,please response/react! \n start time at: ' + str(
@@ -499,6 +507,8 @@ class BaselineAgent(ArtificialBrain):
                                 if self._answered:
                                     # If the human responses after 20 ticks, increase W with 0.1
                                     if current_time < self._tick + 200:
+                                        # increase confidence every round
+                                        self.confidence += 1
                                         self._w_change += 0.1/self.confidence
                                         self._sendMessage(
                                             'There is within 20 seconds,good job! \n start time at: ' + str(
@@ -552,6 +562,8 @@ class BaselineAgent(ArtificialBrain):
                             current_time = state['World']['nr_ticks']
                             # If the human responses after 20 ticks, increase W with 0.1
                             if current_time < self._tick + 200:
+                                # increase confidence every round
+                                self.confidence += 1
                                 self._w_change += 0.1/self.confidence
                                 self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
                                     self._tick) + ' current tick at: ' + str(current_time)
@@ -569,6 +581,8 @@ class BaselineAgent(ArtificialBrain):
                                 current_time = state['World']['nr_ticks']
                                 # If the human responses after 20 ticks, increase W with 0.1
                                 if current_time < self._tick + 200:
+                                    # increase confidence every round
+                                    self.confidence += 1
                                     self._w_change += 0.1/self.confidence
                                     self._sendMessage(
                                         'There is within 20 seconds,good job! \n start time at: ' + str(
@@ -602,6 +616,8 @@ class BaselineAgent(ArtificialBrain):
 
                             if not self._answered:
                                 if current_time == self._tick + 200:
+                                    # increase confidence every round
+                                    self.confidence += 1
                                     self._w_change += -0.1/self.confidence
 
                                     trustworthiness = self.calculate_trustworthiness(willingness, competence, 50, 50)
@@ -633,6 +649,8 @@ class BaselineAgent(ArtificialBrain):
                             if self._answered:
                                 # If the human responses after 20 ticks, increase W with 0.1
                                 if current_time < self._tick + 200:
+                                    # increase confidence every round
+                                    self.confidence += 1
                                     self._w_change += 0.1/self.confidence
                                     self._sendMessage(
                                         'There is within 20 seconds,good job! \n start time at: ' + str(
@@ -773,6 +791,8 @@ class BaselineAgent(ArtificialBrain):
                     current_time = state['World']['nr_ticks']
                     # If the human responses after 20 ticks, increase W with 0.1
                     if current_time < self._tick + 200:
+                        # increase confidence every round
+                        self.confidence += 1
                         self._w_change += 0.1/self.confidence
                         self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
                                 self._tick) + ' current tick at: ' + str(current_time)
@@ -801,6 +821,8 @@ class BaselineAgent(ArtificialBrain):
                     current_time = state['World']['nr_ticks']
                     # If the human responses after 20 ticks, increase W with 0.1
                     if current_time < self._tick + 200:
+                        # increase confidence every round
+                        self.confidence += 1
                         self._w_change += 0.1/self.confidence
                         self._sendMessage(
                             'There is within 20 seconds,good job! \n start time at: ' + str(
@@ -827,6 +849,8 @@ class BaselineAgent(ArtificialBrain):
                     current_time = state['World']['nr_ticks']
                     # If the human responses after 20 ticks, increase W with 0.1
                     if current_time < self._tick + 200:
+                        # increase confidence every round
+                        self.confidence += 1
                         self._w_change += 0.1/self.confidence
                         self._sendMessage(
                             'There is within 20 seconds,good job! \n start time at: ' + str(
@@ -847,6 +871,8 @@ class BaselineAgent(ArtificialBrain):
                     current_time = state['World']['nr_ticks']
                     # If the human responses after 20 ticks, increase W with 0.1
                     if current_time < self._tick + 200:
+                        # increase confidence every round
+                        self.confidence += 1
                         self._w_change += 0.1/self.confidence
                         self._sendMessage(
                             'There is within 20 seconds,good job! \n start time at: ' + str(
@@ -871,6 +897,8 @@ class BaselineAgent(ArtificialBrain):
 
                     if not self._answered:
                         if current_time == self._tick + 200:
+                            # increase confidence every round
+                            self.confidence += 1
                             self._w_change += -0.1/self.confidence
 
                             trustworthiness_mild = self.calculate_trustworthiness(willingness, competence, 50, 50)
@@ -912,6 +940,8 @@ class BaselineAgent(ArtificialBrain):
                     if self._answered:
                         # If the human responses after 20 ticks, increase W with 0.1
                         if current_time < self._tick + 200:
+                            # increase confidence every round
+                            self.confidence += 1
                             self._w_change += 0.1/self.confidence
                             self._sendMessage(
                                 'There is within 20 seconds,good job! \n start time at: ' + str(
@@ -1165,7 +1195,7 @@ class BaselineAgent(ArtificialBrain):
         for message in receivedMessages:
             # Increase agent trust in a team member that rescued a victim
             if 'Collect' in message:
-                trustBeliefs[self._humanName]['competence'] += 0.10 / self.confidence
+                trustBeliefs[self._humanName]['competence'] += 0.10
                 # Restrict the competence belief to a range of -1 to 1
                 trustBeliefs[self._humanName]['competence'] = np.clip(trustBeliefs[self._humanName]['competence'], -1,1)
 
