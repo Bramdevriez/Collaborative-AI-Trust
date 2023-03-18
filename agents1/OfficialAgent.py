@@ -93,6 +93,9 @@ class BaselineAgent(ArtificialBrain):
         # Linear way of combining W and C
         return competence * weight_c*0.01 + willingness * weight_w*0.01
 
+    def update(self, reaction):
+        self.confidence += 1
+        self.willingness += reaction * self.change / self.confidence
 
 
     def decide_on_actions(self, state):
@@ -361,8 +364,7 @@ class BaselineAgent(ArtificialBrain):
                                 # If the human responses after 20 ticks, increase W with self.change
                                 if current_time < self._tick + 200:
                                     # increase confidence every round
-                                    self.confidence += 1
-                                    self.willingness += self.change / self.confidence
+                                    self.update(1)
 
                                     self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
                                         self._tick) + ' current tick at: ' + str(current_time)
@@ -427,8 +429,7 @@ class BaselineAgent(ArtificialBrain):
                                 # If the human responses after 20 ticks, increase W with self.change
                                 if current_time < self._tick + 200:
                                      # increase confidence every round
-                                    self.confidence += 1
-                                    self.willingness += self.change / self.confidence
+                                    self.update(1)
                                     self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
                                         self._tick) + ' current tick at: ' + str(current_time)
                                                       + '\n current willingness is ' + str(
@@ -468,8 +469,7 @@ class BaselineAgent(ArtificialBrain):
                                     # If the human responses after 20 ticks, increase W with self.change
                                     if current_time < self._tick + 200:
                                         # increase confidence every round
-                                        self.confidence += 1
-                                        self.willingness += self.change / self.confidence
+                                        self.update(1)
                                         self._sendMessage(
                                             'There is within 20 seconds,good job! \n start time at: ' + str(
                                                 self._tick) + ' current tick at: ' + str(current_time)
@@ -497,8 +497,7 @@ class BaselineAgent(ArtificialBrain):
                                 if not self._answered:
                                     if current_time == self._tick + 200:
                                         # increase confidence every round
-                                        self.confidence += 1
-                                        self.willingness += -self.change / self.confidence
+                                        self.update(-1)
                                         self._sendMessage(
                                             'There is already 20 seconds,please response/react! \n start time at: ' + str(
                                                 self._tick) + ' current tick at: ' + str(current_time)
@@ -511,8 +510,7 @@ class BaselineAgent(ArtificialBrain):
                                     # If the human responses after 20 ticks, increase W with self.change
                                     if current_time < self._tick + 200:
                                         # increase confidence every round
-                                        self.confidence += 1
-                                        self.willingness += self.change / self.confidence
+                                        self.update(1)
                                         self._sendMessage(
                                             'There is within 20 seconds,good job! \n start time at: ' + str(
                                                 self._tick) + ' current tick at: ' + str(current_time)
@@ -566,8 +564,7 @@ class BaselineAgent(ArtificialBrain):
                             # If the human responses after 20 ticks, increase W with self.change
                             if current_time < self._tick + 200:
                                 # increase confidence every round
-                                self.confidence += 1
-                                self.willingness += self.change / self.confidence
+                                self.update(1)
                                 self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
                                     self._tick) + ' current tick at: ' + str(current_time)
                                                   + '\n current willingness is ' + str(
@@ -585,8 +582,7 @@ class BaselineAgent(ArtificialBrain):
                                 # If the human responses after 20 ticks, increase W with self.change
                                 if current_time < self._tick + 200:
                                     # increase confidence every round
-                                    self.confidence += 1
-                                    self.willingness += self.change / self.confidence
+                                    self.update(1)
                                     self._sendMessage(
                                         'There is within 20 seconds,good job! \n start time at: ' + str(
                                             self._tick) + ' current tick at: ' + str(current_time)
@@ -620,8 +616,7 @@ class BaselineAgent(ArtificialBrain):
                             if not self._answered:
                                 if current_time == self._tick + 200:
                                     # increase confidence every round
-                                    self.confidence += 1
-                                    self.willingness += -self.change / self.confidence
+                                    self.update(-1)
 
                                     trustworthiness = self.calculate_trustworthiness(willingness, competence, 50, 50)
 
@@ -653,8 +648,7 @@ class BaselineAgent(ArtificialBrain):
                                 # If the human responses after 20 ticks, increase W with self.change
                                 if current_time < self._tick + 200:
                                     # increase confidence every round
-                                    self.confidence += 1
-                                    self.willingness += self.change / self.confidence
+                                    self.update(1)
                                     self._sendMessage(
                                         'There is within 20 seconds,good job! \n start time at: ' + str(
                                             self._tick) + ' current tick at: ' + str(current_time)
@@ -797,8 +791,7 @@ class BaselineAgent(ArtificialBrain):
                     # If the human responses after 20 ticks, increase W with self.change
                     if current_time < self._tick + 200:
                         # increase confidence every round
-                        self.confidence += 1
-                        self.willingness += self.change / self.confidence
+                        self.update(1)
                         self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
                                 self._tick) + ' current tick at: ' + str(current_time)
                             + '\n current willingness is ' + str(
@@ -827,8 +820,7 @@ class BaselineAgent(ArtificialBrain):
                     # If the human responses after 20 ticks, increase W with self.change
                     if current_time < self._tick + 200:
                         # increase confidence every round
-                        self.confidence += 1
-                        self.willingness += self.change / self.confidence
+                        self.update(1)
                         self._sendMessage(
                             'There is within 20 seconds,good job! \n start time at: ' + str(
                                 self._tick) + ' current tick at: ' + str(current_time)
@@ -855,8 +847,7 @@ class BaselineAgent(ArtificialBrain):
                     # If the human responses after 20 ticks, increase W with self.change
                     if current_time < self._tick + 200:
                         # increase confidence every round
-                        self.confidence += 1
-                        self.willingness += self.change / self.confidence
+                        self.update(1)
                         self._sendMessage(
                             'There is within 20 seconds,good job! \n start time at: ' + str(
                                 self._tick) + ' current tick at: ' + str(current_time)
@@ -879,8 +870,7 @@ class BaselineAgent(ArtificialBrain):
                     # If the human responses after 20 ticks, increase W with self.change
                     if current_time < self._tick + 200:
                         # increase confidence every round
-                        self.confidence += 1
-                        self.willingness += self.change / self.confidence
+                        self.update(1)
                         self._sendMessage(
                             'There is within 20 seconds,good job! \n start time at: ' + str(
                                 self._tick) + ' current tick at: ' + str(current_time)
@@ -904,9 +894,8 @@ class BaselineAgent(ArtificialBrain):
 
                     if not self._answered:
                         if current_time == self._tick + 200:
-                            # increase confidence every round
-                            self.confidence += 1
-                            self.willingness += -self.change / self.confidence
+
+                            self.update(-1)
 
                             trustworthiness_mild = self.calculate_trustworthiness(willingness, competence, 50, 50)
                             trustworthiness_critical = self.calculate_trustworthiness(willingness, competence, 100, 0)
@@ -948,8 +937,7 @@ class BaselineAgent(ArtificialBrain):
                         # If the human responses after 20 ticks, increase W with self.change
                         if current_time < self._tick + 200:
                             # increase confidence every round
-                            self.confidence += 1
-                            self.willingness += self.change / self.confidence
+                            self.update(1)
                             self._sendMessage(
                                 'There is within 20 seconds,good job! \n start time at: ' + str(
                                     self._tick) + ' current tick at: ' + str(current_time)
@@ -1094,6 +1082,8 @@ class BaselineAgent(ArtificialBrain):
                 # If a received message involves team members finding victims, add these victims and their locations to memory
                 if msg.startswith("Found:"):
 
+                    # trustworthiness = self.calculate_trustworthiness(willingness, competence, 30, 470)
+                    # if trustworthiness > 0:
                     # Identify which victim and area it concerns
                     if len(msg.split()) == 6:
                         foundVic = ' '.join(msg.split()[1:4])
@@ -1115,29 +1105,36 @@ class BaselineAgent(ArtificialBrain):
                     # Add the found victim to the to do list when the human's condition is not 'weak'
                     if 'mild' in foundVic and condition != 'weak':
                         self._todo.append(foundVic)
+
+                    # print("trust "+str(trustworthiness), self._foundVictims)
                 # If a received message involves team members rescuing victims, add these victims and their locations to memory
                 if msg.startswith('Collect:'):
-                    # Identify which victim and area it concerns
-                    if len(msg.split()) == 6:
-                        collectVic = ' '.join(msg.split()[1:4])
-                    else:
-                        collectVic = ' '.join(msg.split()[1:5])
-                    loc = 'area ' + msg.split()[-1]
-                    # Add the area to the memory of searched areas
-                    if loc not in self._searchedRooms:
-                        self._searchedRooms.append(loc)
-                    # Add the victim and location to the memory of found victims
-                    if collectVic not in self._foundVictims:
-                        self._foundVictims.append(collectVic)
-                        self._foundVictimLocs[collectVic] = {'room': loc}
-                    if collectVic in self._foundVictims and self._foundVictimLocs[collectVic]['room'] != loc:
-                        self._foundVictimLocs[collectVic] = {'room': loc}
-                    # Add the victim to the memory of rescued victims when the human's condition is not weak
-                    if condition != 'weak' and collectVic not in self._collectedVictims:
-                        self._collectedVictims.append(collectVic)
-                    # Decide to help the human carry the victim together when the human's condition is weak
-                    if condition == 'weak':
-                        self._rescue = 'together'
+
+                    trustworthiness = self.calculate_trustworthiness(willingness, competence, 30, 470)
+                    if trustworthiness >= 0:
+
+                        # Identify which victim and area it concerns
+                        if len(msg.split()) == 6:
+                            collectVic = ' '.join(msg.split()[1:4])
+                        else:
+                            collectVic = ' '.join(msg.split()[1:5])
+                        loc = 'area ' + msg.split()[-1]
+                        # Add the area to the memory of searched areas
+                        if loc not in self._searchedRooms:
+                            self._searchedRooms.append(loc)
+                        # Add the victim and location to the memory of found victims
+                        if collectVic not in self._foundVictims:
+                            self._foundVictims.append(collectVic)
+                            self._foundVictimLocs[collectVic] = {'room': loc}
+                        if collectVic in self._foundVictims and self._foundVictimLocs[collectVic]['room'] != loc:
+                            self._foundVictimLocs[collectVic] = {'room': loc}
+                        # Add the victim to the memory of rescued victims when the human's condition is not weak
+                        if condition != 'weak' and collectVic not in self._collectedVictims:
+                            self._collectedVictims.append(collectVic)
+                        # Decide to help the human carry the victim together when the human's condition is weak
+                        if condition == 'weak':
+                            self._rescue = 'together'
+                    print("trust "+str(trustworthiness), self._foundVictims)
                 # If a received message involves team members asking for help with removing obstacles, add their location to memory and come over
                 if msg.startswith('Remove:'):
                     # Come over immediately when the agent is not carrying a victim
