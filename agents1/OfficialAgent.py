@@ -838,8 +838,6 @@ class BaselineAgent(ArtificialBrain):
                     if not self._answered:
                         if current_time == self._tick + 200:
 
-
-
                             trustworthiness_mild = self.calculate_trustworthiness(willingness, competence, 50, 50)
                             trustworthiness_critical = self.calculate_trustworthiness(willingness, competence, 100, 0)
                             self.update_willingness(-1)
@@ -865,6 +863,9 @@ class BaselineAgent(ArtificialBrain):
 
                                     self._sendMessage('Picking up ' + self._recentVic + ' in ' + self._door['room_name'] + '.','RescueBot')
                                     self._rescue = 'alone'
+                                    self._goalVic = self._recentVic
+                                    self._goalLoc = self._remaining[self._goalVic]
+                                    self._phase = Phase.PLAN_PATH_TO_VICTIM
 
                                 if self.victim_type == 'critical':
                                     self._sendMessage(
