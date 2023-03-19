@@ -575,7 +575,8 @@ class BaselineAgent(ArtificialBrain):
 
                             self._tick = state['World']['nr_ticks']
                             self._waiting = True
-                            self.update_competence(-1)
+                            if self._condition != 'weak':
+                                self.update_competence(-1)
 
                         # Determine the next area to explore if the human tells the agent not to remove the obstacle
                         if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
