@@ -1087,7 +1087,7 @@ class BaselineAgent(ArtificialBrain):
                 # If a received message involves team members asking for help with removing obstacles, add their location to memory and come over
                 if msg.startswith('Remove:'):
 
-                    trustworthiness = self.calculate_trustworthiness(willingness, competence, 50, 50)
+                    trustworthiness = self.calculate_trustworthiness(willingness, competence, 70, 30)
 
                     if trustworthiness >= 0 and content not in self.ignoreMsg:
                         # Come over immediately when the agent is not carrying a victim
