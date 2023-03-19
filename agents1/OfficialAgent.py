@@ -94,12 +94,16 @@ class BaselineAgent(ArtificialBrain):
     def S_shape(self,value):
         return 1/(1+np.e**(-5*value))
     def calculate_trustworthiness(self, willingness, competence, weight_w, weight_c):
+
         # Linear way of combining W and C
+        competence = np.clip(competence, -1,1)
+        willingness = np.clip(willingness, -1,1)
+
         probabiliy = self.S_shape(competence * weight_c*0.01 + willingness * weight_w*0.01)
-        # print(str(probabiliy))
+        print("probabiliy "+str(probabiliy))
         # if 1 means positve response, -1 means negative response
         result = random.choices([1, -1], weights=(probabiliy, 1-probabiliy), k=1)
-        # print(str(result[0]))
+        print(str(result[0]))
         return result[0]
 
     def update_willingness(self, reaction):
