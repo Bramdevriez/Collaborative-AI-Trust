@@ -97,11 +97,11 @@ class BaselineAgent(ArtificialBrain):
 
     def update_willingness(self, reaction):
         self.willingness += reaction * self.change / self.confidence
-        self.confidence += 0
+        self.confidence += 1
 
     def update_competence(self, reaction):
         self.competence += reaction * self.change / self.confidence
-        self.confidence += 0
+        self.confidence += 1
 
     def timeout_rock(self,state):
         current_time = state['World']['nr_ticks']
