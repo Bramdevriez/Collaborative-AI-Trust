@@ -929,6 +929,9 @@ class BaselineAgent(ArtificialBrain):
 
                                     self._sendMessage('Picking up ' + self._recentVic + ' in ' + self._door['room_name'] + '.','RescueBot')
                                     self._rescue = 'alone'
+                                    self._goalVic = self._recentVic
+                                    self._goalLoc = self._remaining[self._goalVic]
+                                    self._phase = Phase.PLAN_PATH_TO_VICTIM
 
                                 if self.victim_type == 'critical':
                                     self._sendMessage(
