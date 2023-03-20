@@ -1198,10 +1198,12 @@ class BaselineAgent(ArtificialBrain):
         if pick > self.collect:
             self.competence += 0.5/ self.confidence
             self.collect = pick
+            self.confidence += 0.5
 
         if found > self.found:
             self.competence -= 0.3 / self.confidence
             self.found = found
+            self.confidence += 0.5
 
         trustBeliefs[self._humanName]['willingness'] = self.willingness
         # Restrict the competence belief to a range of -1 to 1
