@@ -43,14 +43,14 @@ if __name__ == "__main__":
         if x != "\n":
             result = x.split(";")
             if result[0] == "Alice":
-                a_w.append(result[1])
-                a_c.append(result[2])
+                a_w.append(result[2])
+                a_c.append(result[1])
             elif result[0] == "Ben":
-                b_w.append(result[1])
-                b_c.append(result[2])
+                b_w.append(result[2])
+                b_c.append(result[1])
             elif result[0] == "Charlie":
-                b_w.append(result[1])
-                b_c.append(result[2])
+                b_w.append(result[2])
+                b_c.append(result[1])
 
     print(a_w)
     f.close()
