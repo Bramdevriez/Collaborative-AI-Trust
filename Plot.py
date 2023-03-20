@@ -24,9 +24,6 @@ def plot_competence(a_c,b_c,c_c):
 
 if __name__ == "__main__":
 
-    dict = {"name":{"willingness": [],
-                    "competence": [],}}
-
     c_w = []
     c_c= []
     a_w = []

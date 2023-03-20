@@ -105,7 +105,8 @@ class BaselineAgent(ArtificialBrain):
         competence = np.clip(competence, -1,1)
         willingness = np.clip(willingness, -1,1)
 
-        probabiliy = competence * weight_c*0.01 + willingness * weight_w*0.01
+        probabiliy = self.S_shape(competence * weight_c*0.01 + willingness * weight_w*0.01)
+
 
         return probabiliy
 
@@ -130,18 +131,10 @@ class BaselineAgent(ArtificialBrain):
             self.update_willingness(-1)
 
             if trustworthiness >= 0:
-                # self._sendMessage(
-                #     'Positive response: There is already 20 seconds,please response/react! \n start time at: ' + str(
-                #         self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
-                #         self.willingness) + ' current competence is ' + str(self.competence),
-                #     'RescueBot')
+
                 self._tick = -np.inf
             else:
-                # self._sendMessage(
-                #     'Negative response: There is already 20 seconds, i will perform the next task! \n start time at: ' + str(
-                #         self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
-                #         self.willingness) + ' current competence is ' + str(self.competence),
-                #     'RescueBot')
+
                 self._answered = True
                 self._waiting = False
                 # Add area to the to do list
@@ -160,18 +153,9 @@ class BaselineAgent(ArtificialBrain):
             trustworthiness = self.calculate_trustworthiness(self.willingness, self.competence, 50, 50)
             self.update_willingness(-1)
             if trustworthiness >= 0:
-                # self._sendMessage(
-                #     'Positive response: There is already 20 seconds,please response/react! \n start time at: ' + str(
-                #         self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
-                #         self.willingness) + ' current competence is ' + str(self.competence),
-                #     'RescueBot')
+
                 self._tick = -np.inf
             else:
-                # self._sendMessage(
-                #     'Negative response: There is already 20 seconds, i will remove the stone! \n start time at: ' + str(
-                #         self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
-                #         self.willingness) + ' current competence is ' + str(self.competence),
-                #     'RescueBot')
 
                 self._answered = True
                 self._waiting = False
@@ -191,10 +175,7 @@ class BaselineAgent(ArtificialBrain):
         if current_time < self._tick + 200:
             # increase confidence every round
             self.update_willingness(1)
-            # self._sendMessage('There is within 20 seconds,good job! \n start time at: ' + str(
-            #     self._tick) + ' current tick at: ' + str(current_time)
-            #                   + '\n current willingness is ' + str(
-            #     self.willingness) + ' current competence is ' + str(self.competence), 'RescueBot')
+
             self._tick = -np.inf
 
     # Test if it is within 20 seconds, if not decrease willingness
@@ -203,11 +184,7 @@ class BaselineAgent(ArtificialBrain):
         if current_time == self._tick + 200:
             # increase confidence every round
             self.update_willingness(-1)
-            # self._sendMessage(
-            #     'There is already 20 seconds,please response/react! \n start time at: ' + str(
-            #         self._tick) + ' current tick at: ' + str(current_time)
-            #     + '\n current willingness is ' + str(self.willingness) + ' current competence is ' + str(self.competence),
-            #     'RescueBot')
+
             self._tick = -np.inf
 
 
@@ -856,10 +833,7 @@ class BaselineAgent(ArtificialBrain):
                             self.update_willingness(-1)
                             if (trustworthiness_mild >= 0 and self.victim_type == 'mild') or \
                                     (trustworthiness_critical >= 0 and self.victim_type == 'critical'):
-                                # self._sendMessage(
-                                #     'Positive response: There is already 20 seconds,please response/react! \n start time at: ' + str(
-                                #         self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(self.willingness) + ' current competence is ' + str(self.competence),
-                                #     'RescueBot')
+
                                 self._tick = -np.inf
                             else:
 
@@ -868,11 +842,7 @@ class BaselineAgent(ArtificialBrain):
                                 self._phase = Phase.FIND_NEXT_GOAL
 
                                 if self.victim_type == 'mild':
-                                    # self._sendMessage(
-                                    #     'Negative response: There is already 20 seconds, i will pick up the victim! \n start time at: ' + str(
-                                    #         self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(
-                                    #         self.willingness) + ' current competence is ' + str(self.competence),
-                                    #     'RescueBot')
+
                                     self._sendMessage('Picking up ' + self._recentVic + ' in ' + self._door['room_name'] + '.','RescueBot')
                                     self._rescue = 'alone'
                                     self._goalVic = self._recentVic
@@ -880,10 +850,7 @@ class BaselineAgent(ArtificialBrain):
                                     self._phase = Phase.PLAN_PATH_TO_VICTIM
 
                                 if self.victim_type == 'critical':
-                                    # self._sendMessage(
-                                    #     'Negative response: There is already 20 seconds, i will perform the next task! \n start time at: ' + str(
-                                    #         self._tick) + ' current tick at: ' + str(current_time)+ '\n current willingness is ' + str(self.willingness) + ' current competence is ' + str(self.competence),
-                                    #     'RescueBot')
+
                                     self._todo.append(self._recentVic)
                                 self._recentVic = None
 
@@ -1038,8 +1005,6 @@ class BaselineAgent(ArtificialBrain):
                         elif content not in self.ignoreMsg:
                             self.ignoreMsg.append(content)
 
-
-                        # print("trust "+ str(trustworthiness)+ " search list ", self._searchedRooms)
                 # If a received message involves team members finding victims, add these victims and their locations to memory
                 if msg.startswith("Found:"):
 
@@ -1209,15 +1174,10 @@ class BaselineAgent(ArtificialBrain):
         # Restrict the competence belief to a range of -1 to 1
         trustBeliefs[self._humanName]['willingness'] = np.clip(trustBeliefs[self._humanName]['willingness'], -1, 1)
 
-        self._sendMessage('willingness change ' + str(trustBeliefs[self._humanName]['willingness']), 'RescueBot')
 
-
-        # self._sendMessage('competence change ', 'RescueBot')
         trustBeliefs[self._humanName]['competence'] = self.competence
         # Restrict the competence belief to a range of -1 to 1
         trustBeliefs[self._humanName]['competence'] = np.clip(trustBeliefs[self._humanName]['competence'], -1, 1)
-
-        self._sendMessage('competence change ' + str(trustBeliefs[self._humanName]['competence']), 'RescueBot')
 
         # Save current trust belief values so we can later use and retrieve them to add to a csv file with all the logged trust belief values
         with open(folder + '/beliefs/currentTrustBelief.csv', mode='w') as csv_file:
