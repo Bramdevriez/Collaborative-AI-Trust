@@ -1187,10 +1187,10 @@ class BaselineAgent(ArtificialBrain):
             csv_writer.writerow(['name', 'competence', 'willingness'])
             csv_writer.writerow([self._humanName, trustBeliefs[self._humanName]['competence'], trustBeliefs[self._humanName]['willingness']])
 
-        if state['World']['nr_ticks'] % 100 == 0:
-            with open(folder + '/beliefs/trustLog.csv', mode='a') as csv_file:
-                csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                csv_writer.writerow([self._humanName, trustBeliefs[self._humanName]['competence'], trustBeliefs[self._humanName]['willingness'],self.confidence])
+        # if state['World']['nr_ticks'] % 100 == 0:
+        #     with open(folder + '/beliefs/trustLog.csv', mode='a') as csv_file:
+        #         csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        #         csv_writer.writerow([self._humanName, trustBeliefs[self._humanName]['competence'], trustBeliefs[self._humanName]['willingness'],self.confidence])
 
         return trustBeliefs
 
