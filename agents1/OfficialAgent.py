@@ -1107,35 +1107,35 @@ class BaselineAgent(ArtificialBrain):
 
                     trustworthiness = self.calculate_trustworthiness(willingness, competence, 70, 30)
 
-                    if trustworthiness >= 0 and content not in self.ignoreMsg:
+                    # if trustworthiness >= 0 and content not in self.ignoreMsg:
                         # Come over immediately when the agent is not carrying a victim
-                        if not self._carrying:
-                            # Identify at which location the human needs help
-                            area = 'area ' + msg.split()[-1]
-                            self._door = state.get_room_doors(area)[0]
-                            self._doormat = state.get_room(area)[-1]['doormat']
-                            if area in self._searchedRooms:
-                                self._searchedRooms.remove(area)
-                            # Clear received messages (bug fix)
-                            self.received_messages = []
-                            self.received_messages_content = []
-                            self._moving = True
-                            self._remove = True
-                            if self._waiting and self._recentVic:
-                                self._todo.append(self._recentVic)
-                            self._waiting = False
-                            # Let the human know that the agent is coming over to help
-                            self._sendMessage('Moving to ' + str(self._door['room_name']) + ' to help you remove an obstacle.','RescueBot')
-                            # Plan the path to the relevant area
-                            self._phase = Phase.PLAN_PATH_TO_ROOM
-                        # Come over to help after dropping a victim that is currently being carried by the agent
-                        else:
-                            area = 'area ' + msg.split()[-1]
-                            self._sendMessage('Will come to ' + area + ' after dropping ' + self._goalVic + '.','RescueBot')
+                    if not self._carrying:
+                        # Identify at which location the human needs help
+                        area = 'area ' + msg.split()[-1]
+                        self._door = state.get_room_doors(area)[0]
+                        self._doormat = state.get_room(area)[-1]['doormat']
+                        if area in self._searchedRooms:
+                            self._searchedRooms.remove(area)
+                        # Clear received messages (bug fix)
+                        self.received_messages = []
+                        self.received_messages_content = []
+                        self._moving = True
+                        self._remove = True
+                        if self._waiting and self._recentVic:
+                            self._todo.append(self._recentVic)
+                        self._waiting = False
+                        # Let the human know that the agent is coming over to help
+                        self._sendMessage('Moving to ' + str(self._door['room_name']) + ' to help you remove an obstacle.','RescueBot')
+                        # Plan the path to the relevant area
+                        self._phase = Phase.PLAN_PATH_TO_ROOM
+                    # Come over to help after dropping a victim that is currently being carried by the agent
+                    else:
+                        area = 'area ' + msg.split()[-1]
+                        self._sendMessage('Will come to ' + area + ' after dropping ' + self._goalVic + '.','RescueBot')
 
-                    elif content not in self.ignoreMsg:
-                        # add it to ignore message in the future
-                        self.ignoreMsg.append(content)
+                    # elif content not in self.ignoreMsg:
+                    #     # add it to ignore message in the future
+                    #     self.ignoreMsg.append(content)
 
                 indexS += 1
 
