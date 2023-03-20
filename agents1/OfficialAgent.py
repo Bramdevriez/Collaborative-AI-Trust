@@ -103,7 +103,7 @@ class BaselineAgent(ArtificialBrain):
         competence = np.clip(competence, -1,1)
         willingness = np.clip(willingness, -1,1)
 
-        probabiliy = self.S_shape(competence * weight_c*0.01 + willingness * weight_w*0.01)
+        probabiliy = competence * weight_c*0.01 + willingness * weight_w*0.01
 
         # if 1 means positve response, -1 means negative response
         result = random.choices([1, -1], weights=(probabiliy, 1-probabiliy), k=1)
