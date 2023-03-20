@@ -74,13 +74,13 @@ class BaselineAgent(ArtificialBrain):
         self._moving = False
         self.competence = 0
         self.willingness = 0
-        self.confidence = 1
+        self.confidence = 0
         self._tick = -np.inf
         self.victim_type = None
-        self.change = 0.5
+        self.change = 0.2
         self.ignoreMsg = []
         self.collect =0
-        self.found =0
+        self.found =1
 
 
 
@@ -112,12 +112,12 @@ class BaselineAgent(ArtificialBrain):
     # Update willingness
     def update_willingness(self, reaction):
         self.willingness += reaction * self.change / self.confidence
-        self.confidence += 1
+        self.confidence += 0.5
 
     # Update competence
     def update_competence(self, reaction):
         self.competence += reaction * self.change / self.confidence
-        self.confidence += 1
+        self.confidence += 0.5
 
     # Test time and have reaction for negative and positive for rock
     def timeout_rock(self,state):
