@@ -228,7 +228,7 @@ class BaselineAgent(ArtificialBrain):
         # Initialize and update trust beliefs for team members
         trustBeliefs = self._loadBelief(self._teamMembers, self._folder)
 
-        self._trustBelief( state, self._teamMembers, trustBeliefs, self._folder, self._receivedMessages, self.willingness, self.competence)
+        self._trustBelief( state, self._teamMembers, trustBeliefs, self._folder, self._receivedMessages)
         competence = trustBeliefs[self._humanName]['competence']
         willingness = trustBeliefs[self._humanName]['willingness']
 
