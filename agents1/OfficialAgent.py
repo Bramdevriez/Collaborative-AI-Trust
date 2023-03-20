@@ -107,8 +107,10 @@ class BaselineAgent(ArtificialBrain):
 
         probabiliy = self.S_shape(competence * weight_c*0.01 + willingness * weight_w*0.01)
 
+        # if 1 means positve response, -1 means negative response
+        result = random.choices([1, -1], weights=(probabiliy, 1-probabiliy), k=1)
 
-        return probabiliy
+        return result[0]
 
     # Update willingness
     def update_willingness(self, reaction):
