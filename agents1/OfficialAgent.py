@@ -229,7 +229,7 @@ class BaselineAgent(ArtificialBrain):
         # Initialize and update trust beliefs for team members
         trustBeliefs = self._loadBelief(self._teamMembers, self._folder)
 
-        self._trustBelief(self._teamMembers, trustBeliefs, self._folder, self._receivedMessages, self.willingness, self.competence)
+        self._trustBelief( state, self._teamMembers, trustBeliefs, self._folder, self._receivedMessages, self.willingness, self.competence)
         competence = trustBeliefs[self._humanName]['competence']
         willingness = trustBeliefs[self._humanName]['willingness']
 
@@ -1181,7 +1181,7 @@ class BaselineAgent(ArtificialBrain):
                     trustBeliefs[self._humanName] = {'competence': competence, 'willingness': willingness}
         return trustBeliefs
 
-    def _trustBelief(self, members, trustBeliefs, folder, receivedMessages, w_change, c_change):
+    def _trustBelief(self, state, members, trustBeliefs, folder, receivedMessages, w_change, c_change):
         '''
         Baseline implementation of a trust belief. Creates a dictionary with trust belief scores for each team member, for example based on the received messages.
         '''
@@ -1214,10 +1214,10 @@ class BaselineAgent(ArtificialBrain):
             csv_writer.writerow(['name', 'competence', 'willingness'])
             csv_writer.writerow([self._humanName, trustBeliefs[self._humanName]['competence'], trustBeliefs[self._humanName]['willingness']])
 
-
-        with open(folder + '/beliefs/trustLog.csv', mode='a') as csv_file:
-            csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            csv_writer.writerow([self._humanName, trustBeliefs[self._humanName]['competence'], trustBeliefs[self._humanName]['willingness'],self.confidence])
+        if state['World']['nr_ticks'] % 100 == 0:
+            with open(folder + '/beliefs/trustLog.csv', mode='a') as csv_file:
+                csv_writer = csv.writer(csv_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                csv_writer.writerow([self._humanName, trustBeliefs[self._humanName]['competence'], trustBeliefs[self._humanName]['willingness'],self.confidence])
 
         return trustBeliefs
 
