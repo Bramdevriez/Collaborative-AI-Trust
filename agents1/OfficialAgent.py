@@ -1188,11 +1188,11 @@ class BaselineAgent(ArtificialBrain):
         pick =0
         # Update the trust value based on for example the received messages
         for message in receivedMessages:
-
+            # print(message)
             # Increase agent trust in a team member that rescued a victim
             if 'Collect' in message:
                 pick += 1
-            if 'Found' in message:
+            if 'Found: mildly' in message:
                 found += 1
 
         if pick > self.collect:
@@ -1200,12 +1200,13 @@ class BaselineAgent(ArtificialBrain):
             self.collect = pick
 
         if found > self.found:
-            self.competence -= 0.3/ self.confidence
+            self.competence -= 0.3 / self.confidence
             self.found = found
 
         trustBeliefs[self._humanName]['willingness'] = self.willingness
         # Restrict the competence belief to a range of -1 to 1
         trustBeliefs[self._humanName]['willingness'] = np.clip(trustBeliefs[self._humanName]['willingness'], -1, 1)
+
         self._sendMessage('willingness change ' + str(trustBeliefs[self._humanName]['willingness']), 'RescueBot')
 
 
