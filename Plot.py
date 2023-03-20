@@ -15,7 +15,7 @@ def plot_willingness(a_w,b_w,c_w):
 def plot_competence(a_c,b_c,c_c):
     plt.plot(a_c, label = "Alice")
     plt.plot(b_c, label = "Ben")
-    plt.plot(c_c, label = "Charle")
+    plt.plot(c_c, label = "Charlie")
     plt.ylabel('willingness')
     plt.xlabel('number of tick (round)')
     # plt.title('Interesting Graph\nCheck it out')
@@ -48,7 +48,7 @@ if __name__ == "__main__":
             elif result[0] == "Ben":
                 b_w.append(result[1])
                 b_c.append(result[2])
-            elif result[0] == "Charle":
+            elif result[0] == "Charlie":
                 b_w.append(result[1])
                 b_c.append(result[2])
 
