@@ -74,7 +74,7 @@ class BaselineAgent(ArtificialBrain):
         self._moving = False
         self.competence = 0
         self.willingness = 0
-        self.confidence = 1
+        self.confidence = 0.5
         self._tick = -np.inf
         self.victim_type = None
         self.change = 0.2
