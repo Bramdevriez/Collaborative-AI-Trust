@@ -79,6 +79,8 @@ class BaselineAgent(ArtificialBrain):
         self.victim_type = None
         self.change = 0.5
         self.ignoreMsg = []
+        self.collect =0
+        self.found =0
 
 
 
@@ -585,8 +587,8 @@ class BaselineAgent(ArtificialBrain):
 
                             self._tick = state['World']['nr_ticks']
                             self._waiting = True
-                            if self._condition != 'weak':
-                                self.update_competence(-1)
+
+                            self.update_competence(-1)
 
                         # Determine the next area to explore if the human tells the agent not to remove the obstacle
                         if self.received_messages_content and self.received_messages_content[-1] == 'Continue' and not self._remove:
@@ -832,7 +834,6 @@ class BaselineAgent(ArtificialBrain):
                 # Continue searching other areas if the human decides so
                 if (self.received_messages_content and self.received_messages_content[-1] == 'Continue'):
                     self.testWithinTime(state)
-
                     self._answered = True
                     self._waiting = False
                     self._todo.append(self._recentVic)
@@ -1178,32 +1179,42 @@ class BaselineAgent(ArtificialBrain):
                     trustBeliefs[self._humanName] = {'competence': competence, 'willingness': willingness}
         return trustBeliefs
 
-    def _trustBelief(self, state, members, trustBeliefs, folder, receivedMessages, w_change, c_change):
+    def _trustBelief(self, state, members, trustBeliefs, folder, receivedMessages):
         '''
         Baseline implementation of a trust belief. Creates a dictionary with trust belief scores for each team member, for example based on the received messages.
         '''
+
+        found = 0
+        pick =0
         # Update the trust value based on for example the received messages
         for message in receivedMessages:
 
             # Increase agent trust in a team member that rescued a victim
             if 'Collect' in message:
-                trustBeliefs[self._humanName]['competence'] += self.change
-                # Restrict the competence belief to a range of -1 to 1
-                trustBeliefs[self._humanName]['competence'] = np.clip(trustBeliefs[self._humanName]['competence'], -1,1)
+                pick += 1
+            if 'Found' in message:
+                found += 1
 
-        if w_change != 0:
-            trustBeliefs[self._humanName]['willingness'] = w_change
-            # Restrict the competence belief to a range of -1 to 1
-            trustBeliefs[self._humanName]['willingness'] = np.clip(trustBeliefs[self._humanName]['willingness'], -1, 1)
-            self._sendMessage('willingness change ' + str(trustBeliefs[self._humanName]['willingness']), 'RescueBot')
+        if pick > self.collect:
+            self.competence += 0.5
+            self.collect = pick
 
-        if c_change != 0:
-            # self._sendMessage('competence change ', 'RescueBot')
-            trustBeliefs[self._humanName]['competence'] = c_change
-            # Restrict the competence belief to a range of -1 to 1
-            trustBeliefs[self._humanName]['competence'] = np.clip(trustBeliefs[self._humanName]['competence'], -1, 1)
+        if found > self.found:
+            self.competence -= 0.3
+            self.found = found
 
-            self._sendMessage('competence change ' + str(trustBeliefs[self._humanName]['competence']), 'RescueBot')
+        trustBeliefs[self._humanName]['willingness'] = self.willingness
+        # Restrict the competence belief to a range of -1 to 1
+        trustBeliefs[self._humanName]['willingness'] = np.clip(trustBeliefs[self._humanName]['willingness'], -1, 1)
+        self._sendMessage('willingness change ' + str(trustBeliefs[self._humanName]['willingness']), 'RescueBot')
+
+
+        # self._sendMessage('competence change ', 'RescueBot')
+        trustBeliefs[self._humanName]['competence'] = self.competence
+        # Restrict the competence belief to a range of -1 to 1
+        trustBeliefs[self._humanName]['competence'] = np.clip(trustBeliefs[self._humanName]['competence'], -1, 1)
+
+        self._sendMessage('competence change ' + str(trustBeliefs[self._humanName]['competence']), 'RescueBot')
 
         # Save current trust belief values so we can later use and retrieve them to add to a csv file with all the logged trust belief values
         with open(folder + '/beliefs/currentTrustBelief.csv', mode='w') as csv_file:
